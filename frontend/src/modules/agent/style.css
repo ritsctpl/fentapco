@@ -1,0 +1,47 @@
+.agent-card .copy-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    opacity: 0;
+    transition: all 0.3s ease;
+  }
+  
+  .agent-card:hover .copy-button {
+    opacity: 1;
+  }
+  
+  .agent-card .copy-button:active {
+    color: #1890ff; /* antd's primary blue color */
+  }
+  
+  .agent-card .copy-button:hover {
+    color: #1890ff;
+  }
+
+.agent-detail-tabs .ant-tabs-content-holder {
+  max-height: calc(100vh - 300px);
+  overflow-y: auto;
+}
+
+.agent-detail-tabs .ant-tabs-nav {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: white;
+}
+
+.agent-detail-title { 
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  height: 30px;
+  color: #3179ED;
+  border-bottom: 2px solid #3179ED;
+  cursor: pointer;
+}
+
+.agent-table .ant-table-tbody {
+  overflow: hidden;
+}
+
