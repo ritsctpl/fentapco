@@ -102,7 +102,8 @@ const Dashboard = () => {
         return <Sources />;
       case '2':
         // return <Destination />;
-        return <DestinationMain />;
+        // return <DestinationMain />;
+        return <div>Destination</div>;
       case '3':
         // return <AgentMain />;
         return <AgentScreen />;

@@ -27,9 +27,8 @@ const AgentScreen = () => {
   }, [call]);
 
   const handleAgentClick = (agent) => {
-    // setSelectedAgent(agent?.id);
     setSelectedAgent('new');
-
+    setCurrentAgent(agent);
   };
 
   const handleNotificationClick = (notification, agent) => {
@@ -45,6 +44,7 @@ const AgentScreen = () => {
 
   const handleAddAgent = () => {
     setSelectedAgent('new');
+    setCurrentAgent(null);
   };
 
   const handleCopyConfirm = async (agentToCopy) => {
@@ -131,7 +131,7 @@ const AgentScreen = () => {
   };
 
   if (selectedAgent === 'new') {
-    return <AgentForm onBack={handleBack} />;
+    return <AgentForm onBack={handleBack} agent={currentAgent} />;
   }
 
   if (selectedAgent && selectedNotification) {
