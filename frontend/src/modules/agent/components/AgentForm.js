@@ -7,8 +7,6 @@ import { fetchSources } from '../../../services/source';
 import { createAgent } from '../../../services/agent';
 
 const AgentForm = ({ onBack, agent }) => {
-    console.log('Agent props:', agent);
-
     const [sources, setSources] = React.useState([]);
     const [form] = Form.useForm();
     const [selectedSource, setSelectedSource] = React.useState(agent?.source || '');

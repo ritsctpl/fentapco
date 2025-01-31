@@ -32,8 +32,11 @@ const AgentScreen = () => {
   };
 
   const handleNotificationClick = (notification, agent) => {
-    setSelectedAgent(agent?.id);
-    setSelectedNotification(notification?.id);
+    // setSelectedAgent(agent?.id);
+    // setSelectedNotification(notification?.id);
+    setIsNotificationModalVisible(true);
+    form.setFieldsValue(notification);
+    setSelectedNotification(notification);
   };
 
   const handleBack = () => {
@@ -179,11 +182,11 @@ const AgentScreen = () => {
             rowKey="id"
             pagination={false}
             showHeader={record.notifications?.length > 0 ? true : false}
-            // onRow={(notification) => ({
-            //   onClick: (e) => {
-            //     handleNotificationClick(notification, record);
-            //   }
-            // })}
+            onRow={(notification) => ({
+              onClick: (e) => {
+                handleNotificationClick(notification, record);
+              }
+            })}
             columns={[
               {
                 title: 'Name',
@@ -286,14 +289,28 @@ const AgentScreen = () => {
       />
 
       <Modal
-        title="Add Notification"
+        title={selectedNotification ? "View Notification" : "Add Notification"}
         open={isNotificationModalVisible}
         onCancel={() => {
           setIsNotificationModalVisible(false);
           form.resetFields();
           setActionType(null);
+          setSelectedNotification(null);
+          setIsNotificationModalVisible(false);
         }}
-        onOk={handleNotificationSubmit}
+        footer={selectedNotification ? null : [
+          <Button key="cancel" onClick={() => {
+            setIsNotificationModalVisible(false);
+            form.resetFields();
+            setActionType(null);
+            setSelectedNotification(null);
+          }}>
+            Cancel
+          </Button>,
+          <Button key="submit" type="primary" onClick={handleNotificationSubmit}>
+            OK
+          </Button>
+        ]}
       >
         <Form
           form={form}
