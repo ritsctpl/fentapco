@@ -2,7 +2,7 @@ import api from "./axiosConfig";
 
 // Fetch all settings
 export const fetchAgents = async () => {
-  const response = await api.get("/agents"); // Backend endpoint for settings
+  const response = await api.get("/api/agents"); // Backend endpoint for settings
   return response.data;
 };
 
@@ -33,8 +33,12 @@ export const stopAgent = async (agentId) => {
   return response.data;
 };
 
-// Test a connection
-export const testConnection = async (testPayload) => {
-  const response = await api.post("/agents/test", testPayload);
+export const getSubscriptionTag = async (nodeId, agentId, notificationId) => {
+  const notificationRequest = {
+    notificationId: notificationId,
+    tagNodeIds: [nodeId]
+  }
+  const response = await api.post(`/api/agents/${agentId}/subscribe-tags`,notificationRequest)
   return response.data;
 };
+

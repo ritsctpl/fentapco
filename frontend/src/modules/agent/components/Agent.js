@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Card, Popconfirm, Table, Modal, Form, Input, Select, message } from 'antd';
-import { CopyOutlined, BellOutlined, DeleteOutlined, PlayCircleOutlined, PauseCircleOutlined } from '@ant-design/icons';
+import { Button, Popconfirm, Table, Modal, Form, Input, Select, message, TreeSelect } from 'antd';
+import { CopyOutlined, DeleteOutlined, PlayCircleOutlined, PauseCircleOutlined, CarryOutOutlined, DownOutlined } from '@ant-design/icons';
 import '../style.css';
 import AgentForm from './AgentForm';
 import AgentDetails from './AgentDetails';
 import AgentNotification from './AgentNotification';
-import { MdOutlineNotificationAdd  } from 'react-icons/md';
-import { createAgent, deleteAgent, startAgent, stopAgent } from '../../../services/agent';
+import { MdOutlineNotificationAdd } from 'react-icons/md';
+import { createAgent, deleteAgent, fetchAgents, getSubscriptionTag, startAgent, stopAgent } from '../../../services/agent';
 import { createNotification, deleteNotification } from '../../../services/notificationService';
+import { getAllNodes } from '../../../services/source';
 
 const AgentScreen = () => {
   const [agents, setAgents] = useState([]);
@@ -18,12 +19,21 @@ const AgentScreen = () => {
   const [currentAgent, setCurrentAgent] = useState(null);
   const [form] = Form.useForm();
   const [actionType, setActionType] = useState(null);
+  const [treeData, setTreeData] = useState([]);
+  const [nodeId, setNodeId] = useState(null);
 
   useEffect(() => {
-    const storedAgents = localStorage.getItem('agents');
-    if (storedAgents) {
-      setAgents(JSON.parse(storedAgents));
-    }
+    // const storedAgents = localStorage.getItem('agents');
+    // if (storedAgents) {
+    //   setAgents(JSON.parse(storedAgents));
+    // }
+    const fetchDataAgents = async () => {
+      const agents = await fetchAgents();
+      console.log(agents,'agents');
+      
+      setAgents(agents);
+    };
+    fetchDataAgents();
   }, [call]);
 
   const handleAgentClick = (agent) => {
@@ -31,7 +41,7 @@ const AgentScreen = () => {
     setCurrentAgent(agent);
   };
 
-  const handleNotificationClick = (notification, agent) => {
+  const handleNotificationClick = async (notification, agent) => {
     // setSelectedAgent(agent?.id);
     // setSelectedNotification(notification?.id);
     setIsNotificationModalVisible(true);
@@ -51,27 +61,43 @@ const AgentScreen = () => {
   };
 
   const handleCopyConfirm = async (agentToCopy) => {
-    const {id, ...rest} = agentToCopy;
+    const { id, ...rest } = agentToCopy;
     const agentToAdd = {
       ...rest,
       name: `${rest.name}_Copy`
     };
-    
-    const createCopyAgent = await createAgent(agentToAdd);
-    
-    const newAgentData = {
-      ...createCopyAgent,
-      id: createCopyAgent.id,
-    }
 
-    const updatedAgents = [...agents, newAgentData];
-    localStorage.setItem('agents', JSON.stringify(updatedAgents));
-    setAgents(updatedAgents);
+    const createCopyAgent = await createAgent(agentToAdd);
+
+    // const newAgentData = {
+    //   ...createCopyAgent,
+    //   id: createCopyAgent.id,
+    // }
+
+    // const updatedAgents = [...agents, newAgentData];
+    // localStorage.setItem('agents', JSON.stringify(updatedAgents));
+    // setAgents(updatedAgents);
   };
 
-  const handleAddNotification = (agent) => {
+  const handleAddNotification = async (agent) => {
     setCurrentAgent(agent);
     setIsNotificationModalVisible(true);
+    const nodes = await getAllNodes(agent.source.id);
+    const objectsNode = nodes.children.find(node => node.displayName === "Objects");
+
+    if (objectsNode) {
+      const mapNode = (node) => ({
+        value: node.nodeId,
+        title: node.displayName,
+        icon: <CarryOutOutlined />,
+        children: node.children && node.children.length > 0
+          ? node.children.map(mapNode)
+          : undefined
+      });
+
+      const treeDatas = objectsNode.children.map(mapNode);
+      setTreeData(treeDatas);
+    }
   };
 
   const handleNotificationSubmit = async () => {
@@ -79,7 +105,7 @@ const AgentScreen = () => {
 
     const newNotification = {
       ...values,
-      agent: currentAgent
+      agentId: currentAgent?.id
     };
 
     const createNotifications = await createNotification(newNotification);
@@ -100,9 +126,16 @@ const AgentScreen = () => {
     });
 
     setAgents(updatedAgents);
-    localStorage.setItem('agents', JSON.stringify(updatedAgents));
+    // localStorage.setItem('agents', JSON.stringify(updatedAgents));
     setIsNotificationModalVisible(false);
     form.resetFields();
+
+    const subscriptionTag = await getSubscriptionTag(nodeId, currentAgent.id, createNotifications?.id);
+    if (subscriptionTag) {
+      message.success('Subscription Created');
+    } else {
+      message.error('Failed to Subscribe');
+    }
   };
 
   const handleStartAgent = async (record) => {
@@ -113,7 +146,7 @@ const AgentScreen = () => {
     } catch (error) {
       message.error('Failed to start agent');
     }
-  } 
+  }
 
   const handleStopAgent = async (record) => {
     message.destroy();
@@ -127,9 +160,9 @@ const AgentScreen = () => {
 
   const handleDeleteAgent = async (agentId) => {
     const deleteAgents = await deleteAgent(agentId);
-    const allAgents = JSON.parse(localStorage.getItem('agents') || '[]');
-    const updatedAgents = allAgents.filter(agent => agent.id.toString() !== agentId.toString());
-    localStorage.setItem('agents', JSON.stringify(updatedAgents));
+    // const allAgents = JSON.parse(localStorage.getItem('agents') || '[]');
+    // const updatedAgents = allAgents.filter(agent => agent.id.toString() !== agentId.toString());
+    // localStorage.setItem('agents', JSON.stringify(updatedAgents));
     setCall(call + 1);
   };
 
@@ -148,23 +181,87 @@ const AgentScreen = () => {
 
   const handleDeleteNotification = async (notificationId) => {
     const deleteNotifications = await deleteNotification(notificationId);
-    const allAgents = JSON.parse(localStorage.getItem('agents') || '[]');
-    const updatedAgents = allAgents.map(agent => {
-      if (!agent.notifications) {
-        return agent;
-      }
-      const hasNotification = agent.notifications.some(n => n.id === notificationId);
-      if (!hasNotification) return agent;
-      const result = {
-        ...agent,
-        notifications: agent.notifications.filter(n => n.id !== notificationId)
-      };
-      return result;
-    });
-    
-    localStorage.setItem('agents', JSON.stringify(updatedAgents));
+    // const allAgents = JSON.parse(localStorage.getItem('agents') || '[]');
+    // const updatedAgents = allAgents.map(agent => {
+    //   if (!agent.notifications) {
+    //     return agent;
+    //   }
+    //   const hasNotification = agent.notifications.some(n => n.id === notificationId);
+    //   if (!hasNotification) return agent;
+    //   const result = {
+    //     ...agent,
+    //     notifications: agent.notifications.filter(n => n.id !== notificationId)
+    //   };
+    //   return result;
+    // });
+
+    // localStorage.setItem('agents', JSON.stringify(updatedAgents));
     setCall(call + 1);
   }
+
+  // const handleGetNodes = async () => {
+  //   const nodes = await getAllNodes(currentAgent.source.id);
+  //   console.log(nodes, 'nodes');
+
+  //   // Find the Objects node which contains the device data
+  //   const objectsNode = nodes.children.find(node => node.displayName === "Objects");
+
+  //   if (objectsNode) {
+  //     const mapNode = (node) => ({
+  //       value: node.nodeId,
+  //       title: node.displayName,
+  //       icon: <CarryOutOutlined />,
+  //       children: node.children && node.children.length > 0
+  //         ? node.children.map(mapNode)
+  //         : undefined
+  //     });
+
+  //     const treeDatas = objectsNode.children.map(mapNode);
+  //     setTreeData(treeDatas);
+  //   }
+  // }
+
+
+
+  // const treeData = [
+  //   {
+  //     value: 'parent 1',
+  //     title: 'parent 1',
+  //     icon: <CarryOutOutlined />,
+  //     children: [
+  //       {
+  //         value: 'parent 1-0',
+  //         title: 'parent 1-0',
+  //         icon: <CarryOutOutlined />,
+  //         children: [
+  //           {
+  //             value: 'leaf1',
+  //             title: 'leaf1',
+  //             icon: <CarryOutOutlined />,
+  //           },
+  //           {
+  //             value: 'leaf2',
+  //             title: 'leaf2',
+  //             icon: <CarryOutOutlined />,
+  //           },
+  //         ],
+  //       },
+  //       {
+  //         value: 'parent 1-1',
+  //         title: 'parent 1-1',
+  //         icon: <CarryOutOutlined />,
+  //         children: [
+  //           {
+  //             value: 'sss',
+  //             title: 'sss',
+  //             icon: <CarryOutOutlined />,
+  //           },
+  //         ],
+  //       },
+  //     ],
+  //   },
+  // ];
+
 
   return (
     <div className="agents-container">
@@ -178,42 +275,47 @@ const AgentScreen = () => {
         expandable={{
           expandedRowRender: (record) => (
             <Table
-            dataSource={record.notifications || []}
-            rowKey="id"
-            pagination={false}
-            showHeader={record.notifications?.length > 0 ? true : false}
-            onRow={(notification) => ({
-              onClick: (e) => {
-                handleNotificationClick(notification, record);
-              }
-            })}
-            columns={[
-              {
-                title: 'Name',
-                dataIndex: 'name',
-                key: 'name',
-              },
-              {
-                title: 'Action Type',
-                dataIndex: 'actionType',
-                key: 'actionType',
-              },
-              {
-                title: 'Actions',
-                key: 'actions',
-                render: (_, record) =>  <Popconfirm
-                title="Are you sure you want to delete this Notification?"
-                onConfirm={() => handleDeleteNotification(record.id)}
-                okText="Yes"
-                cancelText="No"
-              >
-                <Button 
-                  type="text"
-                  icon={<DeleteOutlined style={{ color: '#ff4d4f', fontSize: '16px' }}/>}
-                  />
-                </Popconfirm>
-              }
-            ]}
+              dataSource={record.notifications || []}
+              rowKey="id"
+              pagination={false}
+              showHeader={record.notifications?.length > 0 ? true : false}
+              onRow={(notification) => ({
+                onClick: (e) => {
+                  handleNotificationClick(notification, record);
+                }
+              })}
+              columns={[
+                {
+                  title: 'Name',
+                  dataIndex: 'name',
+                  key: 'name',
+                },
+                {
+                  title: 'Action Type',
+                  dataIndex: 'actionType',
+                  key: 'actionType',
+                },
+                {
+                  title: 'Actions',
+                  key: 'actions',
+                  render: (_, record) =>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Popconfirm
+                        title="Are you sure you want to delete this Notification?"
+                        onConfirm={(e) => {
+                          handleDeleteNotification(record.id);
+                        }}
+                        okText="Yes"
+                        cancelText="No"
+                      >
+                        <Button
+                          type="text"
+                          icon={<DeleteOutlined style={{ color: '#ff4d4f', fontSize: '16px' }} />}
+                        />
+                      </Popconfirm>
+                    </div>
+                }
+              ]}
             />
           ),
           rowExpandable: (record) => true,
@@ -239,33 +341,33 @@ const AgentScreen = () => {
             key: 'actions',
             render: (_, record) => (
               <div onClick={(e) => e.stopPropagation()}>
-                <Popconfirm
+                {/* <Popconfirm
                   title="Create a copy of this agent?"
                   onConfirm={() => handleCopyConfirm(record)}
                   okText="Yes"
                   cancelText="No"
                 >
-                  <Button 
+                  <Button
                     type="text"
-                    icon={<CopyOutlined style={{ color: '#3179ED', fontSize: '16px' }}/>}
+                    icon={<CopyOutlined style={{ color: '#3179ED', fontSize: '16px' }} />}
                     title="Copy Agent"
                   />
-                </Popconfirm>
+                </Popconfirm> */}
                 <Button
                   type="text"
-                  icon={<PlayCircleOutlined style={{ color: '#52c41a', fontSize: '16px' }}/>}
+                  icon={<PlayCircleOutlined style={{ color: '#52c41a', fontSize: '16px' }} />}
                   onClick={() => handleStartAgent(record)}
                   title="Start Agent"
                 />
                 <Button
                   type="text"
-                  icon={<PauseCircleOutlined style={{ color: '#faad14', fontSize: '16px' }}/>}
+                  icon={<PauseCircleOutlined style={{ color: '#faad14', fontSize: '16px' }} />}
                   onClick={() => handleStopAgent(record)}
                   title="Stop Agent"
                 />
                 <Button
                   type="text"
-                  icon={<MdOutlineNotificationAdd style={{ color: '#578E7E', fontSize: '20px' }}/>}
+                  icon={<MdOutlineNotificationAdd style={{ color: '#578E7E', fontSize: '20px' }} />}
                   onClick={() => handleAddNotification(record)}
                   title="Add Notification"
                 />
@@ -275,9 +377,9 @@ const AgentScreen = () => {
                   okText="Yes"
                   cancelText="No"
                 >
-                  <Button 
+                  <Button
                     type="text"
-                    icon={<DeleteOutlined style={{ color: '#ff4d4f', fontSize: '16px' }}/>}
+                    icon={<DeleteOutlined style={{ color: '#ff4d4f', fontSize: '16px' }} />}
                     title="Delete Agent"
                   />
                 </Popconfirm>
@@ -285,7 +387,7 @@ const AgentScreen = () => {
             )
           }
         ]}
-          pagination={false}
+        pagination={false}
       />
 
       <Modal
@@ -328,7 +430,13 @@ const AgentScreen = () => {
             label="Node ID"
             rules={[{ required: true, message: 'Please enter node ID' }]}
           >
-            <Input />
+            <TreeSelect
+              // suffixIcon={<DownOutlined onClick={handleGetNodes}/>}
+              treeData={treeData}
+              onChange={(value) => {
+                setNodeId(value);
+              }}
+            />
           </Form.Item>
           <Form.Item
             name="condition"
@@ -342,7 +450,7 @@ const AgentScreen = () => {
             label="Action Type"
             rules={[{ required: true, message: 'Please select action type' }]}
           >
-            <Select 
+            <Select
               onChange={(value) => setActionType(value)}
               options={[
                 { label: 'Email', value: 'email' },
@@ -351,7 +459,7 @@ const AgentScreen = () => {
               ]}
             />
           </Form.Item>
-          
+
           {actionType === 'email' && (
             <Form.Item
               name="email"

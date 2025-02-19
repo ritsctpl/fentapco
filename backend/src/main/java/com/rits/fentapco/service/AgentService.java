@@ -25,11 +25,11 @@ public interface AgentService {
  */
 package com.rits.fentapco.service;
 
-import com.rits.fentapco.model.Agent;
-import com.rits.fentapco.model.Source;
-
 import java.util.List;
 import java.util.Optional;
+
+import com.rits.fentapco.model.Agent;
+import com.rits.fentapco.model.Source;
 
 public interface AgentService {
     List<Agent> getAllAgents();

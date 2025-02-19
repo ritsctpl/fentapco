@@ -24,3 +24,14 @@ export const testSourceConnection = async (id) => {
   const response = await api.post(`/api/sources/${id}/test`);
   return response.data;
 };
+
+export const getAllNodes = async (id) => {
+  console.log(id,'id');
+  const response = await api.get(`/api/sources/${id}/all-nodes`);
+  return response.data;
+};  
+
+export const getNodes = async (id) => {
+  const response = await api.get(`/api/sources/${id}/nodes`);
+  return response.data;
+};

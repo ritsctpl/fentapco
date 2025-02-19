@@ -101,7 +101,16 @@ public class AgentServiceImpl implements AgentService {
  */
 package com.rits.fentapco.service.impl;
 
-import com.rits.fentapco.configuration.WebSocketConfig;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.rits.fentapco.configuration.WebSocketServerConfig;
 import com.rits.fentapco.model.Agent;
 import com.rits.fentapco.model.OpcUaConnection;
@@ -111,16 +120,6 @@ import com.rits.fentapco.repository.AgentRepository;
 import com.rits.fentapco.service.AgentService;
 import com.rits.fentapco.service.OpcUaConnectionService;
 import com.rits.fentapco.service.SourceService;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class AgentServiceImpl implements AgentService {
@@ -223,7 +222,7 @@ public class AgentServiceImpl implements AgentService {
 
         try {
             // Stop the aggregate route for the agent
-            agentRouteBuilder.stopRoute(agent.getId());
+            agentRouteBuilder.stopRoute(agent);
 
             /*
              * // Unregister WebSocket handler if enabled
@@ -268,7 +267,6 @@ public class AgentServiceImpl implements AgentService {
         try {
             Agent agent = agentRepository.findById(agentId)
                     .orElseThrow(() -> new RuntimeException("Agent not found with ID: " + agentId));
-
             OpcUaConnection opcUaConnection = agent.getOpcUaConnection();
             if (opcUaConnection == null) {
                 throw new RuntimeException("Agent does not have a valid OPC UA connection.");
@@ -276,15 +274,25 @@ public class AgentServiceImpl implements AgentService {
 
             // Clear and update subscribed tags
             List<OpcUaTag> tags = agent.getSubscribedTags();
-            tags.clear();
-            tagNodeIds.forEach(nodeId -> {
-                OpcUaTag tag = new OpcUaTag();
-                tag.setNodeId(nodeId);
-                tag.setTagName(nodeId);
-                tag.setOpcUaConnection(opcUaConnection);
-                tag.setAgent(agent);
-                tags.add(tag);
-            });
+            // tags.clear();
+            // tagNodeIds.forEach(nodeId -> {
+            //     OpcUaTag tag = new OpcUaTag();
+            //     tag.setNodeId(nodeId);
+            //     tag.setTagName(nodeId);
+            //     tag.setOpcUaConnection(opcUaConnection);
+            //     tag.setAgent(agent);
+            //     tags.add(tag);
+            // });
+            if(tagNodeIds.size() > 0) {
+                for (String nodeId : tagNodeIds) {
+                    OpcUaTag tag = new OpcUaTag();
+                    tag.setNodeId(nodeId);
+                    tag.setTagName(nodeId);
+                    tag.setOpcUaConnection(opcUaConnection);
+                    //tag.setAgent(agent);
+                    tags.add(tag);
+                }
+            }
 
             agentRepository.save(agent);
 

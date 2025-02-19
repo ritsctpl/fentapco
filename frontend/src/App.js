@@ -1,11 +1,11 @@
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, HashRouter } from "react-router-dom";
 import LandingScreen from "./components/LandingScreen";
 import Settings from "./components/Settings";
 import Dashboard from "./components/Dashboard";
 
 const App = () => (
-  <Router>
+  <HashRouter>
     <Routes>
       {/* <Route path="/" element={<LandingScreen />} />
       <Route path="/settings" element={<Settings />} /> */}
@@ -16,7 +16,7 @@ const App = () => (
       <Route path="/destination" element={<Navigate to="/dashboard/destination" replace />} />
       <Route path="/agent" element={<Navigate to="/dashboard/agent" replace />} />
     </Routes>
-  </Router>
+  </HashRouter>
 );
 
 export default App;

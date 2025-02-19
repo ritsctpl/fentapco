@@ -1,18 +1,19 @@
 package com.rits.fentapco.service.impl;
 
-import com.rits.fentapco.model.Notification;
-import com.rits.fentapco.repository.NotificationRepository;
-import com.rits.fentapco.service.NotificationService;
-import org.apache.camel.CamelContext;
-import org.apache.camel.ProducerTemplate;
-import org.apache.camel.builder.RouteBuilder;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import java.util.List;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import java.util.List;
+
+import org.apache.camel.CamelContext;
+import org.apache.camel.ProducerTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.rits.fentapco.model.Notification;
+import com.rits.fentapco.repository.NotificationRepository;
+import com.rits.fentapco.service.NotificationService;
 
 @Service
 public class NotificationServiceImpl implements NotificationService {

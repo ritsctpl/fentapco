@@ -5,6 +5,7 @@ import SourceForm from './SourceForm';
 import { CopyOutlined } from '@ant-design/icons';
 import '../style.css';
 import { createSource, fetchSourceById, fetchSources } from '../../../services/source';
+import SourceDetails from './SourceDetails';
 
 const Sources = () => {
   const [sources, setSources] = useState([]);
@@ -13,21 +14,26 @@ const Sources = () => {
   const [call, setCall] = useState(0);
 
   useEffect(() => {
-    const storedSources = localStorage.getItem('sources');
+    // const storedSources = localStorage.getItem('sources');
+    // const fetchDataSources = async () => {
+    //   const sources = await fetchSources();
+    //   setPcoSources(sources);
+    // };
+    // fetchDataSources();
+    // if (storedSources) {
+    //   setSources(JSON.parse(storedSources));
+    // }
+
     const fetchDataSources = async () => {
       const sources = await fetchSources();
       setPcoSources(sources);
+      setSources(sources);
     };
     fetchDataSources();
-    if (storedSources) {
-      setSources(JSON.parse(storedSources));
-    }
   }, [call]);
 
   const handleSourceClick = async (source) => {
-    setSelectedSource(source?.id);
-
-    const pcoSource = await fetchSourceById(source?.id);
+    setSelectedSource(source);
   };
 
   const handleBack = () => {
@@ -44,7 +50,8 @@ const Sources = () => {
   }
 
   if (selectedSource) {
-    return <SourceDetail sources={selectedSource} onBack={handleBack} />;
+    // return <SourceDetail sources={selectedSource} onBack={handleBack} />;
+    return <SourceDetails sources={selectedSource} onBack={handleBack} />;
   }
 
   const handleCopyConfirm = async (sourceToCopy) => {
@@ -57,9 +64,9 @@ const Sources = () => {
 
     const newSource = await createSource(sourceToAdd);
     
-    const updatedSources = [...sources, newSource];
-    localStorage.setItem('sources', JSON.stringify(updatedSources));
-    setSources(updatedSources);
+    // const updatedSources = [...sources, newSource];
+    // localStorage.setItem('sources', JSON.stringify(updatedSources));
+    // setSources(updatedSources);
   };
 
   return (

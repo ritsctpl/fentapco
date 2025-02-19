@@ -36,6 +36,7 @@ const AgentForm = ({ onBack, agent }) => {
         const loadSources = async () => {
             try {
                 const fetchedSources = await fetchSources();
+                console.log(fetchedSources,'fetchedSources');
                 setSources(fetchedSources);
             } catch (error) {
                 console.error('Error fetching sources:', error);
@@ -45,7 +46,7 @@ const AgentForm = ({ onBack, agent }) => {
     }, []);
 
     const onFinish = async (values) => {
-        const existingAgents = JSON.parse(localStorage.getItem('agents') || '[]');
+        // const existingAgents = JSON.parse(localStorage.getItem('agents') || '[]');
 
         const newAgent = {
             ...values,
@@ -54,12 +55,12 @@ const AgentForm = ({ onBack, agent }) => {
         };
         const createAgents = await createAgent(newAgent);
 
-        const newAgentData = {
-            ...createAgents,
-            id: createAgents.id,
-        }
+        // const newAgentData = {
+        //     ...createAgents,
+        //     id: createAgents.id,
+        // }
 
-        localStorage.setItem('agents', JSON.stringify([...existingAgents, newAgentData]));
+        // localStorage.setItem('agents', JSON.stringify([...existingAgents, newAgentData]));
         onBack();
     };
 
