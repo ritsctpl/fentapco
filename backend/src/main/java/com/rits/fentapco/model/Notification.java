@@ -1,11 +1,6 @@
 package com.rits.fentapco.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
 
 @Data
@@ -17,9 +12,9 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // @ManyToOne
-    @Column(name = "agent_id", nullable = false)
-    private Long agentId; // Associated agent
+    @ManyToOne
+    @JoinColumn(name = "agent_id", nullable = false)
+    private Agent agent; // Associated agent
 
     @Column(nullable = false)
     private String name; // Name of the notification for easy identification

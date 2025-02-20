@@ -33,21 +33,11 @@ public class Agent {
  */
 package com.rits.fentapco.model;
 
+import jakarta.persistence.*;
+import lombok.Data;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import lombok.Data;
 
 @Data
 @Entity
@@ -72,9 +62,7 @@ public class Agent {
     @JoinColumn(name = "source_id")
     private Source source; // Associated source
 
-    // @OneToMany(mappedBy = "agent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @OneToMany
-    @JoinColumn(name = "agent_id") 
+    @OneToMany(mappedBy = "agent", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Notification> notifications; // Notifications linked to this agent
 
     @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
@@ -92,9 +80,6 @@ public class Agent {
 
     @Column(nullable = false)
     private boolean sseEnabled; // Whether SSE is enabled
-
-    @Column(columnDefinition = "TEXT")
-    private String lastMessage;
 
     // Getter and Setter for subscribedTags
     public List<OpcUaTag> getSubscribedTags() {
@@ -136,13 +121,5 @@ public class Agent {
 
     public void setSseEnabled(boolean sseEnabled) {
         this.sseEnabled = sseEnabled;
-    }
-
-    public String getLastMessage() {
-        return lastMessage;
-    }
-
-    public void setLastMessage(String lastMessage) {
-        this.lastMessage = lastMessage;
     }
 }

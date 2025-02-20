@@ -1,14 +1,16 @@
 package com.rits.fentapco.service.impl;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-
+import com.rits.fentapco.model.OpcUaConnection;
+import com.rits.fentapco.model.Source;
+import com.rits.fentapco.model.SourceNode;
+import com.rits.fentapco.repository.OpcUaConnectionRepository;
+import com.rits.fentapco.repository.SourceRepository;
+import com.rits.fentapco.service.SourceService;
 import org.apache.camel.CamelContext;
+import org.apache.camel.ProducerTemplate;
+import org.apache.camel.builder.RouteBuilder;
 import org.eclipse.milo.opcua.sdk.client.OpcUaClient;
 import org.eclipse.milo.opcua.stack.core.Identifiers;
-import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
-import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseDirection;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.BrowseResultMask;
 import org.eclipse.milo.opcua.stack.core.types.enumerated.NodeClass;
@@ -18,12 +20,14 @@ import org.eclipse.milo.opcua.stack.core.types.structured.ReferenceDescription;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import com.rits.fentapco.model.OpcUaConnection;
-import com.rits.fentapco.model.Source;
-import com.rits.fentapco.model.SourceNode;
-import com.rits.fentapco.repository.OpcUaConnectionRepository;
-import com.rits.fentapco.repository.SourceRepository;
-import com.rits.fentapco.service.SourceService;
+import org.eclipse.milo.opcua.stack.core.types.builtin.NodeId;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned;
+import org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.UInteger;
+import static org.eclipse.milo.opcua.stack.core.types.builtin.unsigned.Unsigned.uint;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class SourceServiceImpl implements SourceService {
@@ -80,9 +84,7 @@ public class SourceServiceImpl implements SourceService {
 
     @Override
     public void deleteSource(Long id) {
-        Optional<Source> source = sourceRepository.findById(id);
         sourceRepository.deleteById(id);
-        opcUaConnectionRepository.deleteById(source.get().getOpcUaConnection().getId());
     }
 
     @Override

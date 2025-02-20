@@ -29,13 +29,10 @@ public class OpcUaConnection {
  */
 package com.rits.fentapco.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.Data;
+
+import java.util.List;
 
 @Data
 @Entity
@@ -60,9 +57,9 @@ public class OpcUaConnection {
 
     private boolean active; // Connection status
 
-    // @OneToMany(mappedBy = "opcUaConnection", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // private List<OpcUaNode> nodes; // Nodes discovered under this connection
+    @OneToMany(mappedBy = "opcUaConnection", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<OpcUaNode> nodes; // Nodes discovered under this connection
 
-    // @OneToMany(mappedBy = "opcUaConnection", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    // private List<OpcUaTag> tags; // Tags associated with this connection
+    @OneToMany(mappedBy = "opcUaConnection", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<OpcUaTag> tags; // Tags associated with this connection
 }
