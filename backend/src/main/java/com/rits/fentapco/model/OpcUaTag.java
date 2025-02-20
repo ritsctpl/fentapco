@@ -26,7 +26,15 @@ public class OpcUaTag {
  */
 package com.rits.fentapco.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.Data;
 
 @Data
@@ -50,7 +58,9 @@ public class OpcUaTag {
     @JoinColumn(name = "opc_ua_connection_id", nullable = false)
     private OpcUaConnection opcUaConnection; // Reference to the connection
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "agent_id") // Ensure that `agent_id` is mapped correctly
-    private Agent agent; // Reference to the associated Agent
+    private Long notificationId;
+
+    // @ManyToOne(fetch = FetchType.LAZY)
+    // @JoinColumn(name = "agent_id") // Ensure that `agent_id` is mapped correctly
+    // private Agent agent; // Reference to the associated Agent
 }

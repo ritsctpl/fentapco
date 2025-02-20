@@ -19,6 +19,7 @@ const AgentScreen = () => {
   const [currentAgent, setCurrentAgent] = useState(null);
   const [form] = Form.useForm();
   const [actionType, setActionType] = useState(null);
+  const [condition, setCondition] = useState('none');
   const [treeData, setTreeData] = useState([]);
   const [nodeId, setNodeId] = useState(null);
 
@@ -101,40 +102,55 @@ const AgentScreen = () => {
   };
 
   const handleNotificationSubmit = async () => {
-    const values = form.getFieldsValue();
+    try {
+      // Validate all form fields
+      await form.validateFields();
+      
+      const values = form.getFieldsValue();
+      const newNotification = {
+        ...values,
+        condition: values.condition ? values.condition : 'none',
+        agentId: currentAgent?.id
+      };
 
-    const newNotification = {
-      ...values,
-      agentId: currentAgent?.id
-    };
+      console.log(newNotification, 'newNotification');
 
-    const createNotifications = await createNotification(newNotification);
+      const createNotifications = await createNotification(newNotification);
+      
+      const newNotificationData = {
+        ...createNotifications,
+        id: createNotifications.id,
+      };
 
-    const newNotificationData = {
-      ...createNotifications,
-      id: createNotifications.id,
-    };
+      const updatedAgents = agents.map(agent => {
+        if (agent.id === currentAgent.id) {
+          return {
+            ...agent,
+            notifications: [...(agent.notifications || []), newNotificationData]
+          };
+        }
+        return agent;
+      });
 
-    const updatedAgents = agents.map(agent => {
-      if (agent.id === currentAgent.id) {
-        return {
-          ...agent,
-          notifications: [...(agent.notifications || []), newNotificationData]
-        };
+      setAgents(updatedAgents);
+      setIsNotificationModalVisible(false);
+      form.resetFields();
+
+      const subscriptionTag = await getSubscriptionTag(nodeId, currentAgent.id, createNotifications?.id);
+      if (subscriptionTag) {
+        message.success('Subscription Created');
+      } else {
+        message.error('Failed to Subscribe');
       }
-      return agent;
-    });
-
-    setAgents(updatedAgents);
-    // localStorage.setItem('agents', JSON.stringify(updatedAgents));
-    setIsNotificationModalVisible(false);
-    form.resetFields();
-
-    const subscriptionTag = await getSubscriptionTag(nodeId, currentAgent.id, createNotifications?.id);
-    if (subscriptionTag) {
-      message.success('Subscription Created');
-    } else {
-      message.error('Failed to Subscribe');
+    } catch (error) {
+      // Form validation error or API error
+      if (error.errorFields) {
+        // This is a form validation error
+        message.error('Please fill in all required fields');
+      } else {
+        // This is an API or other error
+        message.error('Failed to create notification');
+      }
     }
   };
 
@@ -397,6 +413,7 @@ const AgentScreen = () => {
           setIsNotificationModalVisible(false);
           form.resetFields();
           setActionType(null);
+          setCondition('none');
           setSelectedNotification(null);
           setIsNotificationModalVisible(false);
         }}
@@ -405,6 +422,7 @@ const AgentScreen = () => {
             setIsNotificationModalVisible(false);
             form.resetFields();
             setActionType(null);
+            setCondition('none');
             setSelectedNotification(null);
           }}>
             Cancel
@@ -441,10 +459,57 @@ const AgentScreen = () => {
           <Form.Item
             name="condition"
             label="Condition"
-            rules={[{ required: true, message: 'Please enter condition' }]}
+            // rules={[{ required: true, message: 'Please enter condition' }]}
           >
-            <Input />
+           <Select
+              onChange={(value) => setCondition(value)}
+              defaultValue="none"
+              options={[
+                { label: 'Greater Than', value: 'greaterThan' },
+                { label: 'Less Than', value: 'lessThan' },
+                { label: 'Equal', value: 'equal' },
+                { label: 'Between', value: 'between' },
+                { label: 'None', value: 'none' },
+              ]}
+            />
           </Form.Item>
+          {
+            condition === 'between' && (
+              <Form.Item
+                name="minimum"
+                label="Minimum"
+                rules={[{ required: true, message: 'Please enter minimum' }]}
+              >
+                <Input type="number" />
+              </Form.Item>
+            )
+          }
+
+          {
+            condition === 'between' && (
+              <Form.Item
+                name="maximum"
+                label="Maximum"
+                rules={[{ required: true, message: 'Please enter maximum' }]}
+              >
+                <Input type="number" />
+              </Form.Item>
+            )
+          }
+
+          {
+            (condition === 'greaterThan' || condition === 'lessThan' || condition === 'equal') && (
+              <Form.Item
+                name="value"
+                label="Value"
+                rules={[{ required: true, message: 'Please enter value' }]}
+              >
+                <Input type="number" />
+              </Form.Item>
+            )
+          }
+
+
           <Form.Item
             name="actionType"
             label="Action Type"

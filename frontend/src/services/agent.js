@@ -34,11 +34,12 @@ export const stopAgent = async (agentId) => {
 };
 
 export const getSubscriptionTag = async (nodeId, agentId, notificationId) => {
-  const notificationRequest = {
-    notificationId: notificationId,
-    tagNodeIds: [nodeId]
-  }
-  const response = await api.post(`/api/agents/${agentId}/subscribe-tags`,notificationRequest)
+  const tagNodeIds = [nodeId]
+  // const notificationRequest = {
+  //   notificationId: notificationId,
+  //   tagNodeIds: [nodeId]
+  // }
+  const response = await api.post(`/api/agents/${agentId}/subscribe-tags`,tagNodeIds)
   return response.data;
 };
 
