@@ -6,8 +6,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rits.fentapco.configuration.WebSocketServerConfig;
 import com.rits.fentapco.model.Agent;
+import com.rits.fentapco.model.Notification;
 import com.rits.fentapco.model.OpcUaTag;
 import com.rits.fentapco.repository.AgentRepository;
+import com.rits.fentapco.repository.NotificationRepository;
 
 import org.apache.camel.CamelContext;
 import org.apache.camel.builder.RouteBuilder;
@@ -41,6 +43,9 @@ public class AgentRouteBuilder {
 
     @Autowired
     private WebSocketServerConfig webSocketConfig;
+
+     @Autowired
+    private NotificationRepository notificationRepository;
 
     private final Map<String, OPCUAWebSocketHandler> webSocketHandlers = new ConcurrentHashMap<>();
 
@@ -339,12 +344,29 @@ public class AgentRouteBuilder {
                 } else {
                     System.out.println("Invalid input format");
                 }
+
+                Notification notifications = notificationRepository.findByNodeIdAndAgentId(nodeId,agent.getId());
+            
+            boolean shouldSend = false;
+           if(!notifications.getCondition().equalsIgnoreCase("none")){
+            shouldSend = evaluateCondition(notifications, value);
+           }
+                
+            if (shouldSend) {
                 ObjectNode jsonNode = mapper.createObjectNode();
                 jsonNode.put("resource", resource);
                 jsonNode.put(name, value.getValue().toString());
-                
+
                 String jsonMessage = mapper.writeValueAsString(jsonNode);
                 sendToWebSocket(agent, jsonMessage);
+            }
+
+                // ObjectNode jsonNode = mapper.createObjectNode();
+                // jsonNode.put("resource", resource);
+                // jsonNode.put(name, value.getValue().toString());
+                
+                // String jsonMessage = mapper.writeValueAsString(jsonNode);
+                // sendToWebSocket(agent, jsonMessage);
             } catch (Exception e) {
                 System.err.println("Error creating JSON message: " + e.getMessage());
             }
@@ -352,6 +374,138 @@ public class AgentRouteBuilder {
             System.err.println(String.format("Node: %s, Error: %s", nodeId, statusCode));
         }
     }
+
+    private boolean evaluateCondition(Notification notification, Variant value) {
+        try {
+            Object actualValue = value.getValue(); // Get the actual value from Variant
+    
+            if (actualValue instanceof Number) {
+                double numericValue = ((Number) actualValue).doubleValue(); // Convert to double
+                String condition = notification.getCondition();
+    
+                switch (condition) {
+                    case "Greater than":
+                        return numericValue > Double.parseDouble(notification.getValue());
+                    case "Less than":
+                        return numericValue < Double.parseDouble(notification.getValue());
+                    case "Equal to":
+                        return numericValue == Double.parseDouble(notification.getValue());
+                    case "BETWEEN":
+                        return numericValue >= notification.getMin() && numericValue <= notification.getMax();
+                    default:
+                        return false;
+                }
+            } 
+            else if (actualValue instanceof Boolean) {
+                boolean boolValue = (Boolean) actualValue;
+                String condition = notification.getCondition().toLowerCase();
+    
+                switch (condition) {
+                    case "true":
+                        return boolValue;  // Returns true if value is true
+                    case "false":
+                        return !boolValue; // Returns true if value is false
+                    default:
+                        return false;
+                }
+            } 
+            else if (actualValue instanceof String) {
+                String stringValue = (String) actualValue;
+                String condition = notification.getCondition().toLowerCase();
+    
+                switch (condition) {
+                    case "equal to":
+                        return stringValue.equalsIgnoreCase(notification.getValue());  
+                    default:
+                        return false;
+                }
+            } 
+            else {
+                System.err.println("Unsupported value type for condition check: " + actualValue.getClass().getSimpleName());
+                return false;
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing value for condition check: " + e.getMessage());
+            return false;
+        }
+    }
+    
+
+    // private void processAggregateMessage(Exchange exchange, Agent agent) {
+    //     DataValue dataValue = exchange.getIn().getBody(DataValue.class);
+    //     Variant value = dataValue.getValue();
+    //     String nodeId = exchange.getIn().getHeader("CamelMiloNode", String.class);
+    
+    //     if (dataValue.getStatusCode().isGood()) {
+    //         try {
+    //             String station = "", resourceName = "";
+    //             String tagPath = nodeId.substring(nodeId.indexOf(']') + 1);
+    //             String[] parts = tagPath.split("/");
+
+    //             if (parts.length == 2) {
+    //                 station = parts[0];
+    //                 resourceName = parts[1];
+    //             } else {
+    //                 System.out.println("Invalid input format");
+    //                 return;
+    //             }
+
+    //             // Create or get existing array node
+    //             ArrayNode arrayNode;
+    //             if (agent.getLastMessage() == null) {
+    //                 arrayNode = mapper.createArrayNode();
+    //             } else {
+    //                 arrayNode = (ArrayNode) mapper.readTree(agent.getLastMessage());
+    //             }
+
+    //             // Find or create station object
+    //             ObjectNode stationNode = null;
+    //             for (JsonNode node : arrayNode) {
+    //                 if (node.get("id").asText().equals(station)) {
+    //                     stationNode = (ObjectNode) node;
+    //                     break;
+    //                 }
+    //             }
+
+    //             if (stationNode == null) {
+    //                 stationNode = mapper.createObjectNode();
+    //                 stationNode.put("id", station);
+    //                 stationNode.put("station", station);
+    //                 stationNode.set("resources", mapper.createArrayNode());
+    //                 arrayNode.add(stationNode);
+    //             }
+
+    //             // Add or update resource
+    //             ArrayNode resources = (ArrayNode) stationNode.get("resources");
+    //             boolean resourceFound = false;
+    //             for (JsonNode resource : resources) {
+    //                 if (resource.get("name").asText().equals(resourceName)) {
+    //                     ((ObjectNode) resource).put("value", value.getValue().toString());
+    //                     resourceFound = true;
+    //                     break;
+    //                 }
+    //             }
+
+    //             if (!resourceFound) {
+    //                 ObjectNode resourceNode = mapper.createObjectNode();
+    //                 resourceNode.put("name", resourceName);
+    //                 resourceNode.put("value", value.getValue().toString());
+    //                 resources.add(resourceNode);
+    //             }
+
+    //             // Store the updated message and send it
+    //             String jsonMessage = mapper.writeValueAsString(arrayNode);
+    //             agent.setLastMessage(jsonMessage);
+    //             sendToWebSocket(agent, jsonMessage);
+
+    //         } catch (Exception e) {
+    //             System.err.println("Error creating JSON message: " + e.getMessage());
+    //         }
+    //     } else {
+    //         System.err.println("Error processing node: " + nodeId);
+    //     }
+    // }
+
 
     private void processAggregateMessage(Exchange exchange, Agent agent) {
         DataValue dataValue = exchange.getIn().getBody(DataValue.class);
@@ -363,7 +517,7 @@ public class AgentRouteBuilder {
                 String station = "", resourceName = "";
                 String tagPath = nodeId.substring(nodeId.indexOf(']') + 1);
                 String[] parts = tagPath.split("/");
-
+    
                 if (parts.length == 2) {
                     station = parts[0];
                     resourceName = parts[1];
@@ -371,55 +525,66 @@ public class AgentRouteBuilder {
                     System.out.println("Invalid input format");
                     return;
                 }
-
-                // Create or get existing array node
-                ArrayNode arrayNode;
-                if (agent.getLastMessage() == null) {
-                    arrayNode = mapper.createArrayNode();
+    
+                // Fetch notification condition for filtering
+                Notification notification = notificationRepository.findByNodeIdAndAgentId(nodeId, agent.getId());
+                boolean shouldSend = false;
+    
+                if (notification != null && !notification.getCondition().equalsIgnoreCase("none")) {
+                    shouldSend = evaluateCondition(notification, value);
                 } else {
-                    arrayNode = (ArrayNode) mapper.readTree(agent.getLastMessage());
+                    shouldSend = true; // If no condition is set, allow message to pass
                 }
-
-                // Find or create station object
-                ObjectNode stationNode = null;
-                for (JsonNode node : arrayNode) {
-                    if (node.get("id").asText().equals(station)) {
-                        stationNode = (ObjectNode) node;
-                        break;
+    
+                if (shouldSend) {
+                    // Create or get existing array node
+                    ArrayNode arrayNode;
+                    if (agent.getLastMessage() == null) {
+                        arrayNode = mapper.createArrayNode();
+                    } else {
+                        arrayNode = (ArrayNode) mapper.readTree(agent.getLastMessage());
                     }
-                }
-
-                if (stationNode == null) {
-                    stationNode = mapper.createObjectNode();
-                    stationNode.put("id", station);
-                    stationNode.put("station", station);
-                    stationNode.set("resources", mapper.createArrayNode());
-                    arrayNode.add(stationNode);
-                }
-
-                // Add or update resource
-                ArrayNode resources = (ArrayNode) stationNode.get("resources");
-                boolean resourceFound = false;
-                for (JsonNode resource : resources) {
-                    if (resource.get("name").asText().equals(resourceName)) {
-                        ((ObjectNode) resource).put("value", value.getValue().toString());
-                        resourceFound = true;
-                        break;
+    
+                    // Find or create station object
+                    ObjectNode stationNode = null;
+                    for (JsonNode node : arrayNode) {
+                        if (node.get("id").asText().equals(station)) {
+                            stationNode = (ObjectNode) node;
+                            break;
+                        }
                     }
+    
+                    if (stationNode == null) {
+                        stationNode = mapper.createObjectNode();
+                        stationNode.put("id", station);
+                        stationNode.put("station", station);
+                        stationNode.set("resources", mapper.createArrayNode());
+                        arrayNode.add(stationNode);
+                    }
+    
+                    // Add or update resource
+                    ArrayNode resources = (ArrayNode) stationNode.get("resources");
+                    boolean resourceFound = false;
+                    for (JsonNode resource : resources) {
+                        if (resource.get("name").asText().equals(resourceName)) {
+                            ((ObjectNode) resource).put("value", value.getValue().toString());
+                            resourceFound = true;
+                            break;
+                        }
+                    }
+    
+                    if (!resourceFound) {
+                        ObjectNode resourceNode = mapper.createObjectNode();
+                        resourceNode.put("name", resourceName);
+                        resourceNode.put("value", value.getValue().toString());
+                        resources.add(resourceNode);
+                    }
+    
+                    // Store the updated message and send it
+                    String jsonMessage = mapper.writeValueAsString(arrayNode);
+                    agent.setLastMessage(jsonMessage);
+                    sendToWebSocket(agent, jsonMessage);
                 }
-
-                if (!resourceFound) {
-                    ObjectNode resourceNode = mapper.createObjectNode();
-                    resourceNode.put("name", resourceName);
-                    resourceNode.put("value", value.getValue().toString());
-                    resources.add(resourceNode);
-                }
-
-                // Store the updated message and send it
-                String jsonMessage = mapper.writeValueAsString(arrayNode);
-                agent.setLastMessage(jsonMessage);
-                sendToWebSocket(agent, jsonMessage);
-
             } catch (Exception e) {
                 System.err.println("Error creating JSON message: " + e.getMessage());
             }
@@ -427,6 +592,7 @@ public class AgentRouteBuilder {
             System.err.println("Error processing node: " + nodeId);
         }
     }
+    
 
     private void sendToWebSocket(Agent agent, String message) {
         if (agent.isWebsocketEnabled()) {

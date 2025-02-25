@@ -41,4 +41,13 @@ public class Notification {
 
     @Column
     private String description; // Optional description for the notification
+
+    @Column(name = "condition_value")
+    private String value;
+
+    @Column
+    private Double min;
+
+    @Column
+    private Double max;
 }

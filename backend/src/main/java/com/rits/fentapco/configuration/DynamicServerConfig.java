@@ -39,6 +39,7 @@ import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 public class DynamicServerConfig implements WebServerFactoryCustomizer<ConfigurableWebServerFactory> {
     
     private static final String CONFIG_FILE_PATH = "frontend/public/server.properties"; // Update if needed
+    private static final String CONFIG_FILE_PATH_JAR = "backend/src/main/resources/static/server.properties";
 
     @Override
     public void customize(ConfigurableWebServerFactory factory) {
@@ -52,6 +53,7 @@ public class DynamicServerConfig implements WebServerFactoryCustomizer<Configura
 
             // Save configuration to a properties file
             saveConfigToFile(ipAddress, port);
+            saveConfigToStaticFile(ipAddress, port);
 
             System.out.println("Server running at: http://" + ipAddress + ":" + port);
         } catch (UnknownHostException e) {
@@ -67,6 +69,19 @@ public class DynamicServerConfig implements WebServerFactoryCustomizer<Configura
         try (FileOutputStream fos = new FileOutputStream(CONFIG_FILE_PATH)) {
             properties.store(fos, "Server Configuration");
             System.out.println("Configuration file written successfully at: " + CONFIG_FILE_PATH);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void saveConfigToStaticFile(String ip, int port) {
+        Properties properties = new Properties();
+        properties.setProperty("server.address", ip);
+        properties.setProperty("server.port", String.valueOf(port));
+
+        try (FileOutputStream fos = new FileOutputStream(CONFIG_FILE_PATH_JAR)) {
+            properties.store(fos, "Server Configuration");
+            System.out.println("Configuration file written successfully at: " + CONFIG_FILE_PATH_JAR);
         } catch (IOException e) {
             e.printStackTrace();
         }

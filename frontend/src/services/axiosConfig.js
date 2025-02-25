@@ -21,6 +21,7 @@ import axios from "axios";
 const getBackendURL = async () => {
   try {
     const response = await fetch("/server.properties");
+    console.log(response,'response');
     const text = await response.text();
     // Parse the properties file
     const lines = text.split("\n");
@@ -35,9 +36,10 @@ const getBackendURL = async () => {
         serverPort = line.split("=")[1].trim();
       }
     });
- 
+    console.log(`http://${serverAddress}:${serverPort}`,'serverAddress');
     return `http://${serverAddress}:${serverPort}`;
   } catch (error) {
+    console.log(error,'error');
     console.error("Error fetching server.properties:", error);
     return "http://localhost:8787"; // Fallback in case of failure
   }

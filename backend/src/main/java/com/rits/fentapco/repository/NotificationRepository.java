@@ -4,4 +4,5 @@ import com.rits.fentapco.model.Notification;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
+    Notification findByNodeIdAndAgentId(String nodeId,Long agentId);
 }
