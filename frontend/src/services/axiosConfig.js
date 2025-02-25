@@ -5,53 +5,33 @@
 //   baseURL: "http://localhost:8787", // Update this to match your Spring Boot backend
 //   timeout: 10000, // Optional: Set a timeout
 //   headers: {
-//     "Content-Type": "application/json", // Optional: Specify default headers
-//   },
-// });
-
-// // Export the instance
-// export default api;
-
-
+  //     "Content-Type": "application/json", // Optional: Specify default headers
+  //   },
+  // });
+  
+  // // Export the instance
+  // export default api;
 
 
 import axios from "axios";
- 
-// Function to get the backend IP from server.properties
-const getBackendURL = async () => {
-  try {
-    const response = await fetch("/server.properties");
-    console.log(response,'response');
-    const text = await response.text();
-    // Parse the properties file
-    const lines = text.split("\n");
-    let serverAddress = "";
-    let serverPort = "";
- 
-    lines.forEach((line) => {
-      if (line.startsWith("server.address")) {
-        serverAddress = line.split("=")[1].trim();
-      }
-      if (line.startsWith("server.port")) {
-        serverPort = line.split("=")[1].trim();
-      }
-    });
-    console.log(`http://${serverAddress}:${serverPort}`,'serverAddress');
-    return `http://${serverAddress}:${serverPort}`;
-  } catch (error) {
-    console.log(error,'error');
-    console.error("Error fetching server.properties:", error);
-    return "http://localhost:8787"; // Fallback in case of failure
-  }
+
+const getBackendURL = () => {
+  const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  const port = window.location.port || 8787;  
+  
+  const baseURL = isLocalhost 
+    ? `http://localhost:${port}`  
+    : `http://${window.location.hostname}:${port}`; 
+
+  return baseURL;
 };
- 
-// Create an Axios instance dynamically
+
 const api = axios.create({
-  baseURL: await getBackendURL(), // Fetch the backend URL dynamically
+  baseURL: getBackendURL(),
   timeout: 10000,
   headers: {
     "Content-Type": "application/json",
   },
 });
- 
+
 export default api;
