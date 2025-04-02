@@ -2,21 +2,25 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.4.1</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
+
     <groupId>com.rits.fentapco</groupId>
     <artifactId>fentapco-backend</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>FentaPCO</name>
     <description>Fenta Plant Connector</description>
+
     <properties>
         <java.version>17</java.version>
         <camel.version>3.20.4</camel.version> <!-- Unified Camel version -->
     </properties>
+
     <dependencies>
         <!-- Spring Boot Dependencies -->
         <dependency>
@@ -101,13 +105,12 @@
             <version>${camel.version}</version>
         </dependency>
 
-        <!-- Spring Websocket -->
+        <!-- Spring WebSocket -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-websocket</artifactId>
             <version>6.2.1</version>
         </dependency>
-
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
@@ -117,13 +120,19 @@
             <artifactId>tomcat-embed-websocket</artifactId>
         </dependency>
 
-
         <!-- Lombok (optional for boilerplate code) -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>
         </dependency>
+
+        <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-jexl3</artifactId>
+        <version>3.3</version>
+    </dependency>
+
     </dependencies>
 
     <build>

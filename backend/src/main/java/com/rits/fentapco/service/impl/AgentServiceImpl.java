@@ -276,20 +276,20 @@ public class AgentServiceImpl implements AgentService {
             List<OpcUaTag> tags = agent.getSubscribedTags();
             // tags.clear();
             // tagNodeIds.forEach(nodeId -> {
-            //     OpcUaTag tag = new OpcUaTag();
-            //     tag.setNodeId(nodeId);
-            //     tag.setTagName(nodeId);
-            //     tag.setOpcUaConnection(opcUaConnection);
-            //     tag.setAgent(agent);
-            //     tags.add(tag);
+            // OpcUaTag tag = new OpcUaTag();
+            // tag.setNodeId(nodeId);
+            // tag.setTagName(nodeId);
+            // tag.setOpcUaConnection(opcUaConnection);
+            // tag.setAgent(agent);
+            // tags.add(tag);
             // });
-            if(tagNodeIds.size() > 0) {
+            if (tagNodeIds.size() > 0) {
                 for (String nodeId : tagNodeIds) {
                     OpcUaTag tag = new OpcUaTag();
                     tag.setNodeId(nodeId);
                     tag.setTagName(nodeId);
                     tag.setOpcUaConnection(opcUaConnection);
-                    //tag.setAgent(agent);
+                    // tag.setAgent(agent);
                     tags.add(tag);
                 }
             }

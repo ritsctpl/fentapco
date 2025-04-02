@@ -12,8 +12,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.rits.fentapco.model.Notification;
+import com.rits.fentapco.repository.DestinationRepository;
 import com.rits.fentapco.repository.NotificationRepository;
 import com.rits.fentapco.service.NotificationService;
+import com.rits.fentapco.service.PcoIdService;
 
 @Service
 public class NotificationServiceImpl implements NotificationService {
@@ -27,6 +29,18 @@ public class NotificationServiceImpl implements NotificationService {
     @Autowired
     private ProducerTemplate producerTemplate;
 
+    @Autowired
+    private FentaAgentRegistrationService registrationService;
+
+    @Autowired
+    private DestinationRepository destinationRepository;
+
+    @Autowired
+    private FentaAgentResponseListener fentaAgentResponseListener;
+
+    @Autowired
+    private PcoIdService pcoIdService;
+
     @Override
     public List<Notification> getAllNotifications() {
         return notificationRepository.findAll();
@@ -37,9 +51,87 @@ public class NotificationServiceImpl implements NotificationService {
         return notificationRepository.findById(id).orElseThrow(() -> new RuntimeException("Notification not found"));
     }
 
+    // @Override
+    // public Notification saveNotification(Notification notification) {
+
+    // // 🛡️ Ensure actionType is not null
+    // if (notification.getActionType() == null ||
+    // notification.getActionType().isBlank()) {
+    // notification.setActionType("camelRoute");
+    // }
+
+    // Notification saved = notificationRepository.save(notification);
+
+    // // ✅ Fetch the full Destination to check protocol
+    // if (notification.getDestination() != null &&
+    // notification.getDestination().getId() != null) {
+    // Long destinationId = notification.getDestination().getId();
+
+    // destinationRepository.findById(destinationId).ifPresent(destination -> {
+    // if ("FENTA".equalsIgnoreCase(destination.getProtocol())) {
+    // String pcoId = destination.getPcoId() != null ? destination.getPcoId() :
+    // "RPCO001";
+    // Long agentId = saved.getAgentId();
+    // String username = "system"; // Can be enhanced later
+
+    // registrationService.registerAgent(
+    // pcoId,
+    // String.valueOf(agentId),
+    // username,
+    // "STARTED",
+    // destination.getKafkaBrokers());
+
+    // System.out
+    // .println("✅ Agent [" + agentId + "] registered on FENTA (protocol) via
+    // notification save.");
+    // }
+    // });
+    // }
+
+    // return saved;
+    // }
+
     @Override
     public Notification saveNotification(Notification notification) {
-        return notificationRepository.save(notification);
+        if (notification.getActionType() == null || notification.getActionType().isBlank()) {
+            notification.setActionType("camelRoute");
+        }
+
+        notification.setStatus("NEW");
+        Notification saved = notificationRepository.save(notification);
+
+        Long destinationId = saved.getDestination() != null ? saved.getDestination().getId() : null;
+        if (destinationId != null) {
+            destinationRepository.findById(destinationId).ifPresent(destination -> {
+                if ("FENTA".equalsIgnoreCase(destination.getProtocol())) {
+                    try {
+                        fentaAgentResponseListener.startListener(destination.getKafkaBrokers());
+
+                        // String pcoId = destination.getPcoId() != null ? destination.getPcoId() :
+                        // "RPCO001";
+                        String pcoId = pcoIdService.getPcoId(); // ✅ Use service
+                        String username = "system";
+
+                        String correlationId = registrationService.registerAgent(
+                                pcoId,
+                                String.valueOf(saved.getId()), // Use notification ID as agentId
+                                username,
+                                "STARTED",
+                                destination.getKafkaBrokers());
+
+                        saved.setStatus(correlationId + "-inprogress");
+                        notificationRepository.save(saved);
+
+                        System.out.println(
+                                "✅ Agent [" + saved.getId() + "] registered with correlationId: " + correlationId);
+                    } catch (Exception e) {
+                        System.err.println("❌ Failed to register agent: " + e.getMessage());
+                    }
+                }
+            });
+        }
+
+        return saved;
     }
 
     @Override
