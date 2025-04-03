@@ -67,30 +67,6 @@ public class OpcUaConnectionServiceImpl implements OpcUaConnectionService {
         }
     }
 
-    /*
-     * @Override
-     * public List<OpcUaNode> discoverNodes(OpcUaConnection connection) {
-     * List<OpcUaNode> nodes = new ArrayList<>();
-     * try (ProducerTemplate producerTemplate =
-     * camelContext.createProducerTemplate()) {
-     * String opcuaUri = "milo-client:" + connection.getEndpointUrl() +
-     * "?clientId=camel-client&method=browse";
-     * List<String> result = producerTemplate.requestBody(opcuaUri, null,
-     * List.class);
-     * result.forEach(node -> {
-     * OpcUaNode opcUaNode = new OpcUaNode();
-     * opcUaNode.setNodeId(node); // Simplified node ID storage
-     * opcUaNode.setDisplayName(node);
-     * nodes.add(opcUaNode);
-     * });
-     * } catch (Exception e) {
-     * e.printStackTrace();
-     * throw new RuntimeException("Failed to discover nodes: " + e.getMessage());
-     * }
-     * return nodes;
-     * }
-     */
-
     @Override
     public List<OpcUaNode> discoverNodes(OpcUaConnection connection) {
         List<OpcUaNode> nodes = new ArrayList<>();
@@ -215,31 +191,6 @@ public class OpcUaConnectionServiceImpl implements OpcUaConnectionService {
         camelContext.start();
         return tagList;
     }
-
-    /*
-     * @Override
-     * public List<OpcUaTag> discoverTags(OpcUaConnection connection) {
-     * List<OpcUaTag> tags = new ArrayList<>();
-     * try (ProducerTemplate producerTemplate =
-     * camelContext.createProducerTemplate()) {
-     * String opcuaUri = "milo-client:" + connection.getEndpointUrl() +
-     * "?clientId=camel-client&method=browse";
-     * List<String> result = producerTemplate.requestBody(opcuaUri, null,
-     * List.class);
-     * result.forEach(tagId -> {
-     * OpcUaTag tag = new OpcUaTag();
-     * tag.setTagName(tagId); // Simplified for demonstration
-     * tag.setNodeId(tagId);
-     * tag.setOpcUaConnection(connection);
-     * tags.add(tag);
-     * });
-     * } catch (Exception e) {
-     * e.printStackTrace();
-     * throw new RuntimeException("Failed to discover tags: " + e.getMessage());
-     * }
-     * return tags;
-     * }
-     */
 
     @Override
     public List<OpcUaTag> discoverTags(OpcUaConnection connection) {
