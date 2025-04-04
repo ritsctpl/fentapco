@@ -1,19 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Card, Tabs, Space, Popconfirm } from 'antd';
 import { ArrowLeftOutlined, DeleteOutlined } from '@ant-design/icons';
-
-// MQTT Components
-import MQTTClient from './mqtt/MQTTClient';
-import MQTTConnection from './mqtt/MQTTConnection';
-import MQTTTagDefinition from './mqtt/MQTTTagDefinition';
-import MQTTReliableConnection from './common/ReliableConnection';
-
-// OPCUA Components
-import OPCUASession from './opcua/OPCUASession';
-import OPCUASecurity from './opcua/OPCUASecurity';
-import OPCUASubscription from './opcua/OPCUASubscription';
-import OPCUAReliableConnection from './common/ReliableConnection';
 import { deleteSource } from '../../../services/source';
+
 
 const SourceDetail = ({ sources, onBack }) => {
   const [source, setSource] = useState({
@@ -147,51 +136,51 @@ const SourceDetail = ({ sources, onBack }) => {
     onBack();
   };
 
-  const MQTTItems = [
-    {
-      key: '0',
-      label: 'Client',
-      children: <MQTTClient source={source} handleChange={handleChange} />,
-    },
-    {
-      key: '1',
-      label: 'Connection',
-      children: <MQTTConnection source={source} handleChange={handleChange} />,
-    },
-    {
-      key: '2',
-      label: 'Tag Definition',
-      children: <MQTTTagDefinition source={source} handleChange={handleChange} />,
-    },
-    {
-      key: '3',
-      label: 'Reliable Connection',
-      children: <MQTTReliableConnection source={source} handleChange={handleChange} />,
-    },
-  ];
+  // const MQTTItems = [
+  //   {
+  //     key: '0',
+  //     label: 'Client',
+  //     children: <MQTTClient source={source} handleChange={handleChange} />,
+  //   },
+  //   {
+  //     key: '1',
+  //     label: 'Connection',
+  //     children: <MQTTConnection source={source} handleChange={handleChange} />,
+  //   },
+  //   {
+  //     key: '2',
+  //     label: 'Tag Definition',
+  //     children: <MQTTTagDefinition source={source} handleChange={handleChange} />,
+  //   },
+  //   {
+  //     key: '3',
+  //     label: 'Reliable Connection',
+  //     children: <MQTTReliableConnection source={source} handleChange={handleChange} />,
+  //   },
+  // ];
 
-  const OPCUAItems = [
-    {
-      key: '0',
-      label: 'Session',
-      children: <OPCUASession source={source} handleChange={handleChange} />,
-    },
-    {
-      key: '1',
-      label: 'Security',
-      children: <OPCUASecurity source={source} handleChange={handleChange} />,
-    },
-    {
-      key: '2',
-      label: 'Subscription',
-      children: <OPCUASubscription source={source} handleChange={handleChange} />,
-    },
-    {
-      key: '3',
-      label: 'Reliable Connection',
-      children: <OPCUAReliableConnection source={source} handleChange={handleChange} />,
-    },
-  ];
+  // const OPCUAItems = [
+  //   {
+  //     key: '0',
+  //     label: 'Session',
+  //     children: <OPCUASession source={source} handleChange={handleChange} />,
+  //   },
+  //   {
+  //     key: '1',
+  //     label: 'Security',
+  //     children: <OPCUASecurity source={source} handleChange={handleChange} />,
+  //   },
+  //   {
+  //     key: '2',
+  //     label: 'Subscription',
+  //     children: <OPCUASubscription source={source} handleChange={handleChange} />,
+  //   },
+  //   {
+  //     key: '3',
+  //     label: 'Reliable Connection',
+  //     children: <OPCUAReliableConnection source={source} handleChange={handleChange} />,
+  //   },
+  // ];
 
   const handleDeleteConfirm = async (sourceId) => {
     const deleteSources = await deleteSource(sourceId);
@@ -221,7 +210,7 @@ const SourceDetail = ({ sources, onBack }) => {
         </Space>
       </div>
 
-      <Card style={{ marginTop: '20px' }}>
+      {/* <Card style={{ marginTop: '20px' }}>
         <div style={{ height: 'calc(100vh - 230px)', overflow: 'auto' }}>
           {source.type === 'mqtt' && (
             <Tabs items={MQTTItems} defaultActiveKey="0" onChange={setActiveTab} className="source-detail-tabs" />
@@ -230,7 +219,7 @@ const SourceDetail = ({ sources, onBack }) => {
             <Tabs items={OPCUAItems} defaultActiveKey="0" onChange={setActiveTab} className="source-detail-tabs" />
           )}
         </div>
-      </Card>
+      </Card> */}
     </div>
   );
 };

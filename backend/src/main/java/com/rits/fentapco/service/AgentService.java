@@ -50,4 +50,6 @@ public interface AgentService {
 
     boolean configurePublishing(Long id, String websocketUrl, String sseUrl, boolean websocketEnabled,
             boolean sseEnabled);
+
+    List<String> getSubscribedTags(Long id);
 }

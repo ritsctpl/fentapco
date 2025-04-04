@@ -14,13 +14,10 @@ import {
 } from '@ant-design/icons';
 import { Button, Menu, Avatar } from 'antd';
 import './style.css';
-// import Destination from './Destination';
-import AgentMain from './Agent';
 import Settings from './Settings';
-// import Source from './Source';
-import DestinationMain from '../modules/destinations/components/Destination';
 import Sources from '../modules/source/components/Sources';
 import AgentScreen from '../modules/agent/components/Agent';
+import Destination from '../modules/destinations';
 
 const items = [
   {
@@ -38,11 +35,11 @@ const items = [
     icon: <SiIobroker />,
     label: 'Agents',
   },
-  {
-    key: '4',
-    icon: <ContainerOutlined />,
-    label: 'Subscription',
-  }
+  // {
+  //   key: '4',
+  //   icon: <ContainerOutlined />,
+  //   label: 'Subscription',
+  // }
 ];
 
 const Dashboard = () => {
@@ -88,9 +85,9 @@ const Dashboard = () => {
       case '3':
         navigate('/dashboard/agent');
         break;
-      case '4':
-        navigate('/dashboard/subscription');
-        break;
+      // case '4':
+      //   navigate('/dashboard/subscription');
+      //   break;
       default:
         navigate('/dashboard/source');
     }
@@ -101,16 +98,13 @@ const Dashboard = () => {
       case '1':
         return <Sources />;
       case '2':
-        // return <Destination />;
-        // return <DestinationMain />;
-        return <div>Destination</div>;
+        return <Destination />;
       case '3':
-        // return <AgentMain />;
         return <AgentScreen />;
-      case '4':
-        return <div>Subscription</div>;
-      case '5':
-        return <Settings />;
+      // case '4':
+      //   return <div>Subscription</div>;
+      // case '5':
+      //   return <Settings />;
       default:
         return <Sources />;
     }
@@ -161,7 +155,7 @@ const Dashboard = () => {
             style={{ height: '100%' }}
           />
         </div>
-        <div className="content-area">
+        <div className="content-area" style={{marginLeft: collapsed ? '80px' : '256px'}}>
           {renderContent()}
         </div>
       </div>

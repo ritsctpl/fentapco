@@ -101,6 +101,7 @@ public class AgentServiceImpl implements AgentService {
  */
 package com.rits.fentapco.service.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -283,14 +284,25 @@ public class AgentServiceImpl implements AgentService {
             // tag.setAgent(agent);
             // tags.add(tag);
             // });
+            tags.removeIf(tag -> !tagNodeIds.contains(tag.getNodeId()));
             if (tagNodeIds.size() > 0) {
                 for (String nodeId : tagNodeIds) {
+                    // OpcUaTag tag = new OpcUaTag();
+                    // tag.setNodeId(nodeId);
+                    // tag.setTagName(nodeId);
+                    // tag.setOpcUaConnection(opcUaConnection);
+                    // // tag.setAgent(agent);
+                    // tags.add(tag);
+                    boolean exists = tags.stream()
+                    .anyMatch(tag -> tag.getNodeId().equals(nodeId));
+               
+                if (!exists) {
                     OpcUaTag tag = new OpcUaTag();
                     tag.setNodeId(nodeId);
                     tag.setTagName(nodeId);
                     tag.setOpcUaConnection(opcUaConnection);
-                    // tag.setAgent(agent);
                     tags.add(tag);
+                }
                 }
             }
 
@@ -303,6 +315,19 @@ public class AgentServiceImpl implements AgentService {
             e.printStackTrace();
             return false;
         }
+    }
+
+    @Override
+    public List<String> getSubscribedTags(Long id) {
+        Agent agent = agentRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("Agent not found with ID: " + id));
+        List<OpcUaTag> tags = agent.getSubscribedTags();
+        List<String> subscribedTags = new ArrayList<>();
+        for (OpcUaTag tag : tags)
+        {
+            subscribedTags.add(tag.getNodeId());
+        }
+        return subscribedTags;
     }
 
     @Override

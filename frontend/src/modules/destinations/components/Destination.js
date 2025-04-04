@@ -1,32 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Card, Popconfirm } from 'antd';
-import DestinationForm from './DestinationForm';
-import DestinationDetail from './DestinationDetails';
 import { CopyOutlined } from '@ant-design/icons';
 import '../style.css';
-import { fetchDestinationById, fetchDestinations } from '../../../services/destination';
+import { createDestination, fetchDestinations } from '../../../services/destination';
+import DestinationForm from './DestinationForm';
+import DestinationDetail from './DestinationDetails';
 
 const DestinationMain = () => {
-  const [destinations, setDestinations] = useState([]);
-  const [pcoDestinations, setPcoDestinations] = useState([]);
+  const [destination, setDestination] = useState([]);
+  const [pcoDestination, setPcoDestination] = useState([]);
   const [selectedDestination, setSelectedDestination] = useState(0);
   const [call, setCall] = useState(0);
 
   useEffect(() => {
-    // const fetchDataDestinations = async () => {
-    //   const destinations = await fetchDestinations();
-    //   setPcoDestinations(destinations);
-    // };
-    // fetchDataDestinations();
-    const storedDestinations = localStorage.getItem('destinations');
-    if (storedDestinations) {
-      setDestinations(JSON.parse(storedDestinations));
-    }
+    const fetchDataSources = async () => {
+      const destinations = await fetchDestinations();
+      setPcoDestination(destinations);
+      setDestination(destinations);
+    };
+    fetchDataSources();
   }, [call]);
 
-  const handleDestinationClick = async (destination) => {
-    setSelectedDestination(destination?.id);
-    const pcoDestination = await fetchDestinationById(destination?.id);
+  const handleDestinationClick = async (source) => {
+    setSelectedDestination(source);
   };
 
   const handleBack = () => {
@@ -38,41 +34,39 @@ const DestinationMain = () => {
     setSelectedDestination('new');
   };
 
-  const handleCopyConfirm = (destinationToCopy) => {
-    const destinationToAdd = {
-      ...destinationToCopy,
-      id: Date.now(),
-      name: `${destinationToCopy.name}_Copy`
-    };
-
-    const updatedDestinations = [...destinations, destinationToAdd];
-    localStorage.setItem('destinations', JSON.stringify(updatedDestinations));
-    setDestinations(updatedDestinations);
-  };
-
   if (selectedDestination === 'new') {
     return <DestinationForm onBack={handleBack} />;
   }
 
   if (selectedDestination) {
-    return <DestinationDetail destinations={selectedDestination} onBack={handleBack} pcoDestinations={pcoDestinations}/>;
+    return <DestinationDetail destination={selectedDestination} onBack={handleBack} />;
   }
 
+  const handleCopyConfirm = async (destinationToCopy) => {
+    const { id, ...destinationData } = destinationToCopy;
+
+    const destinationToAdd = {
+      ...destinationData,
+      name: `${destinationToCopy.name}_Copy`
+    };
+    const newDestination = await createDestination(destinationToAdd);
+  };
+
   return (
-    <div className="destinations-container">
+    <div className="destination-container">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h2>Destinations</h2>
-        <Button type="primary" onClick={() => handleAddDestination(destinations)}>Add Destination</Button>
+        <h2>Destination</h2>
+        <Button type="primary" onClick={() => handleAddDestination(destination)}>Add Destination</Button>
       </div>
       <div className="cards-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
-        {destinations?.map(destination => (
-          <Card 
+        {destination?.map(destination => (
+          <Card
             key={destination.id}
             style={{ textAlign: 'center', cursor: 'pointer', width: '200px', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 0 10px 0 rgba(0, 0, 0, 0.1)' }}
             onClick={() => handleDestinationClick(destination)}
             className="destination-card"
           >
-             <div onClick={(e) => e.stopPropagation()}>
+            <div onClick={(e) => e.stopPropagation()}>
               <Popconfirm
                 title="Create a copy of this destination?"
                 onConfirm={() => handleCopyConfirm(destination)}
@@ -87,8 +81,8 @@ const DestinationMain = () => {
               </Popconfirm>
             </div>
             <h3>{destination.name}</h3>
-            <p style={{fontSize:'12px'}}>{destination.type}</p>
-            <p style={{fontSize:'12px'}}>{destination.description.length > 30 ? destination.description.substring(0, 30) + '...' : destination.description}</p>
+            <p style={{fontSize:'12px'}}>{destination.protocol}</p>
+            <p style={{fontSize:'12px'}}>{destination.kafkaBrokers?.length > 30 ? destination.kafkaBrokers.substring(0, 30) + '...' : destination.kafkaBrokers}</p>
           </Card>
         ))}
       </div>

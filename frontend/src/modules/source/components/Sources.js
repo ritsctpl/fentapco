@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Card, Popconfirm } from 'antd';
-import SourceDetail from './SourceDetail';
 import SourceForm from './SourceForm';
 import { CopyOutlined } from '@ant-design/icons';
 import '../style.css';
@@ -50,7 +49,6 @@ const Sources = () => {
   }
 
   if (selectedSource) {
-    // return <SourceDetail sources={selectedSource} onBack={handleBack} />;
     return <SourceDetails sources={selectedSource} onBack={handleBack} />;
   }
 

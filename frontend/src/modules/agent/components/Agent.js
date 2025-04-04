@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Popconfirm, Table, Modal, Form, Input, Select, message, TreeSelect } from 'antd';
-import { CopyOutlined, DeleteOutlined, PlayCircleOutlined, PauseCircleOutlined, CarryOutOutlined, DownOutlined } from '@ant-design/icons';
+import { CopyOutlined, DeleteOutlined, PlayCircleOutlined, PauseCircleOutlined, CarryOutOutlined, DownOutlined, PlusOutlined } from '@ant-design/icons';
 import '../style.css';
 import AgentForm from './AgentForm';
 import AgentDetails from './AgentDetails';
 import AgentNotification from './AgentNotification';
 import { MdOutlineNotificationAdd } from 'react-icons/md';
-import { createAgent, deleteAgent, fetchAgents, getSubscriptionTag, startAgent, stopAgent } from '../../../services/agent';
+import { createAgent, deleteAgent, fetchAgents, getSubscribedTags, getSubscriptionTag, startAgent, stopAgent } from '../../../services/agent';
 import { createNotification, deleteNotification } from '../../../services/notificationService';
 import { getAllNodes } from '../../../services/source';
+import { fetchDestinations } from '../../../services/destination';
 
 const AgentScreen = () => {
   const [agents, setAgents] = useState([]);
@@ -20,22 +21,34 @@ const AgentScreen = () => {
   const [form] = Form.useForm();
   const [actionType, setActionType] = useState(null);
   const [condition, setCondition] = useState('none');
-  const [treeData, setTreeData] = useState([]);
+  // const [treeData, setTreeData] = useState([]);
   const [nodeId, setNodeId] = useState(null);
+  const [destinations, setDestinations] = useState([]);
+  const [selectedDestination, setSelectedDestination] = useState(null);
+  const [subscribedTags, setSubscribedTags] = useState([]);
+  const [tagAliasRows, setTagAliasRows] = useState([{ name: '', nodeId: '' }]);
 
   useEffect(() => {
-    // const storedAgents = localStorage.getItem('agents');
-    // if (storedAgents) {
-    //   setAgents(JSON.parse(storedAgents));
-    // }
     const fetchDataAgents = async () => {
       const agents = await fetchAgents();
-      console.log(agents,'agents');
-      
+      console.log(agents, 'agents');
+
       setAgents(agents);
     };
     fetchDataAgents();
   }, [call]);
+
+  useEffect(() => {
+    const loadDestinations = async () => {
+      try {
+        const fetchedDestination = await fetchDestinations();
+        setDestinations(fetchedDestination);
+      } catch (error) {
+        console.error('Error fetching sources:', error);
+      }
+    };
+    loadDestinations();
+  }, []);
 
   const handleAgentClick = (agent) => {
     setSelectedAgent('new');
@@ -43,11 +56,28 @@ const AgentScreen = () => {
   };
 
   const handleNotificationClick = async (notification, agent) => {
-    // setSelectedAgent(agent?.id);
-    // setSelectedNotification(notification?.id);
+    console.log(notification, 'notification');
     setIsNotificationModalVisible(true);
-    form.setFieldsValue(notification);
+    
+    // Set the destination field with the destination name
+    form.setFieldsValue({
+      ...notification,
+      destination: notification.destination.name
+    });
+    
+    // Set the selected destination for the dropdown
+    setSelectedDestination(notification.destination);
+    
     setSelectedNotification(notification);
+    
+    // If you have tag alias mapping, set it
+    if (notification.tagAliasMap) {
+      const tagAliasRows = Object.entries(notification.tagAliasMap).map(([name, nodeId]) => ({
+        name,
+        nodeId
+      }));
+      setTagAliasRows(tagAliasRows);
+    }
   };
 
   const handleBack = () => {
@@ -69,48 +99,66 @@ const AgentScreen = () => {
     };
 
     const createCopyAgent = await createAgent(agentToAdd);
-
-    // const newAgentData = {
-    //   ...createCopyAgent,
-    //   id: createCopyAgent.id,
-    // }
-
-    // const updatedAgents = [...agents, newAgentData];
-    // localStorage.setItem('agents', JSON.stringify(updatedAgents));
-    // setAgents(updatedAgents);
   };
 
   const handleAddNotification = async (agent) => {
+    
     setCurrentAgent(agent);
     setIsNotificationModalVisible(true);
-    const nodes = await getAllNodes(agent.source.id);
-    const objectsNode = nodes.children.find(node => node.displayName === "Objects");
-
-    if (objectsNode) {
-      const mapNode = (node) => ({
-        value: node.nodeId,
-        title: node.displayName,
-        icon: <CarryOutOutlined />,
-        children: node.children && node.children.length > 0
-          ? node.children.map(mapNode)
-          : undefined
-      });
-
-      const treeDatas = objectsNode.children.map(mapNode);
-      setTreeData(treeDatas);
+    
+    try {
+      console.log('call');
+      const fetchedSubscribedTags = await getSubscribedTags(agent.id);
+      // Transform the array of strings into the format needed for Select options
+      const formattedTags = fetchedSubscribedTags.map(tag => ({
+        key: tag,
+        value: tag,
+        title: tag
+      }));
+      setSubscribedTags(formattedTags);
+    } catch (error) {
+      console.error('Error fetching subscribed tags:', error);
     }
+  };
+
+  const handleAddTagAliasRow = () => {
+    setTagAliasRows([...tagAliasRows, { name: '', nodeId: '' }]);
+  };
+
+  const handleTagAliasChange = (index, field, value) => {
+    const newRows = [...tagAliasRows];
+    newRows[index][field] = value;
+    setTagAliasRows(newRows);
+  };
+
+  const handleRemoveTagAliasRow = (index) => {
+    const newRows = tagAliasRows.filter((_, i) => i !== index);
+    setTagAliasRows(newRows);
+  };
+
+  const resetTagAliasTable = () => {
+    setTagAliasRows([{ name: '', nodeId: '' }]);
   };
 
   const handleNotificationSubmit = async () => {
     try {
-      // Validate all form fields
       await form.validateFields();
-      
       const values = form.getFieldsValue();
+
+      // Create tagAliasMap from rows
+      const tagAliasMap = {};
+      tagAliasRows.forEach(row => {
+        if (row.name && row.nodeId) {
+          tagAliasMap[row.name] = row.nodeId;
+        }
+      });
+
       const newNotification = {
         ...values,
+        destination: selectedDestination,
         condition: values.condition ? values.condition : 'none',
-        agentId: currentAgent?.id
+        agentId: currentAgent?.id,
+        tagAliasMap
       };
 
       console.log(newNotification, 'newNotification');
@@ -121,7 +169,7 @@ const AgentScreen = () => {
         ...createNotifications,
         id: createNotifications.id,
       };
-
+      
       const updatedAgents = agents.map(agent => {
         if (agent.id === currentAgent.id) {
           return {
@@ -135,20 +183,19 @@ const AgentScreen = () => {
       setAgents(updatedAgents);
       setIsNotificationModalVisible(false);
       form.resetFields();
-
-      const subscriptionTag = await getSubscriptionTag(nodeId, currentAgent.id, createNotifications?.id);
-      if (subscriptionTag) {
-        message.success('Subscription Created');
-      } else {
-        message.error('Failed to Subscribe');
-      }
+      resetTagAliasTable();
+      message.success('Notification Created');
+      
+      // const subscriptionTag = await getSubscriptionTag(nodeId, currentAgent.id, createNotifications?.id);
+      // if (subscriptionTag) {
+      //   message.success('Subscription Created');
+      // } else {
+      //   message.error('Failed to Subscribe');
+      // }
     } catch (error) {
-      // Form validation error or API error
       if (error.errorFields) {
-        // This is a form validation error
         message.error('Please fill in all required fields');
       } else {
-        // This is an API or other error
         message.error('Failed to create notification');
       }
     }
@@ -176,9 +223,6 @@ const AgentScreen = () => {
 
   const handleDeleteAgent = async (agentId) => {
     const deleteAgents = await deleteAgent(agentId);
-    // const allAgents = JSON.parse(localStorage.getItem('agents') || '[]');
-    // const updatedAgents = allAgents.filter(agent => agent.id.toString() !== agentId.toString());
-    // localStorage.setItem('agents', JSON.stringify(updatedAgents));
     setCall(call + 1);
   };
 
@@ -197,86 +241,13 @@ const AgentScreen = () => {
 
   const handleDeleteNotification = async (notificationId) => {
     const deleteNotifications = await deleteNotification(notificationId);
-    // const allAgents = JSON.parse(localStorage.getItem('agents') || '[]');
-    // const updatedAgents = allAgents.map(agent => {
-    //   if (!agent.notifications) {
-    //     return agent;
-    //   }
-    //   const hasNotification = agent.notifications.some(n => n.id === notificationId);
-    //   if (!hasNotification) return agent;
-    //   const result = {
-    //     ...agent,
-    //     notifications: agent.notifications.filter(n => n.id !== notificationId)
-    //   };
-    //   return result;
-    // });
-
-    // localStorage.setItem('agents', JSON.stringify(updatedAgents));
     setCall(call + 1);
   }
 
-  // const handleGetNodes = async () => {
-  //   const nodes = await getAllNodes(currentAgent.source.id);
-  //   console.log(nodes, 'nodes');
-
-  //   // Find the Objects node which contains the device data
-  //   const objectsNode = nodes.children.find(node => node.displayName === "Objects");
-
-  //   if (objectsNode) {
-  //     const mapNode = (node) => ({
-  //       value: node.nodeId,
-  //       title: node.displayName,
-  //       icon: <CarryOutOutlined />,
-  //       children: node.children && node.children.length > 0
-  //         ? node.children.map(mapNode)
-  //         : undefined
-  //     });
-
-  //     const treeDatas = objectsNode.children.map(mapNode);
-  //     setTreeData(treeDatas);
-  //   }
-  // }
-
-
-
-  // const treeData = [
-  //   {
-  //     value: 'parent 1',
-  //     title: 'parent 1',
-  //     icon: <CarryOutOutlined />,
-  //     children: [
-  //       {
-  //         value: 'parent 1-0',
-  //         title: 'parent 1-0',
-  //         icon: <CarryOutOutlined />,
-  //         children: [
-  //           {
-  //             value: 'leaf1',
-  //             title: 'leaf1',
-  //             icon: <CarryOutOutlined />,
-  //           },
-  //           {
-  //             value: 'leaf2',
-  //             title: 'leaf2',
-  //             icon: <CarryOutOutlined />,
-  //           },
-  //         ],
-  //       },
-  //       {
-  //         value: 'parent 1-1',
-  //         title: 'parent 1-1',
-  //         icon: <CarryOutOutlined />,
-  //         children: [
-  //           {
-  //             value: 'sss',
-  //             title: 'sss',
-  //             icon: <CarryOutOutlined />,
-  //           },
-  //         ],
-  //       },
-  //     ],
-  //   },
-  // ];
+  const handleDestinationChange = (value) => {
+    const destination = destinations.find(destination => destination.name === value);
+    setSelectedDestination(destination);
+  };
 
 
   return (
@@ -302,14 +273,14 @@ const AgentScreen = () => {
               })}
               columns={[
                 {
-                  title: 'Name',
+                  title: 'Notification Name',
                   dataIndex: 'name',
                   key: 'name',
                 },
                 {
-                  title: 'Action Type',
-                  dataIndex: 'actionType',
-                  key: 'actionType',
+                    title: 'Description ',
+                  dataIndex: 'description',
+                  key: 'description',
                 },
                 {
                   title: 'Actions',
@@ -415,7 +386,7 @@ const AgentScreen = () => {
           setActionType(null);
           setCondition('none');
           setSelectedNotification(null);
-          setIsNotificationModalVisible(false);
+          resetTagAliasTable();
         }}
         footer={selectedNotification ? null : [
           <Button key="cancel" onClick={() => {
@@ -431,11 +402,31 @@ const AgentScreen = () => {
             OK
           </Button>
         ]}
+        width={700}
+        bodyStyle={{ 
+          height: '65vh',
+          overflow: 'auto',
+          paddingRight: '20px'
+        }}
       >
         <Form
           form={form}
           layout="vertical"
         >
+          <Form.Item
+            label="Destination"
+            name="destination"
+            initialValue=""
+            rules={[{ required: true, message: 'Please select destination' }]}
+          >
+            <Select onChange={(value) => handleDestinationChange(value)}>
+              {destinations.map(destination => (
+                <Select.Option key={destination.id} value={destination.name}>
+                  {destination.name}
+                </Select.Option>
+              ))}
+            </Select>
+          </Form.Item>
           <Form.Item
             name="name"
             label="Name"
@@ -448,20 +439,20 @@ const AgentScreen = () => {
             label="Node ID"
             rules={[{ required: true, message: 'Please enter node ID' }]}
           >
-            <TreeSelect
-              // suffixIcon={<DownOutlined onClick={handleGetNodes}/>}
-              treeData={treeData}
-              onChange={(value) => {
-                setNodeId(value);
-              }}
-            />
+            <Select onChange={(value) => setNodeId(value)}>
+              {subscribedTags.map(tag => (
+                <Select.Option key={tag.value} value={tag.value}>
+                  {tag.value}
+                </Select.Option>
+              ))}
+            </Select>
           </Form.Item>
           <Form.Item
             name="condition"
             label="Condition"
-            // rules={[{ required: true, message: 'Please enter condition' }]}
+          // rules={[{ required: true, message: 'Please enter condition' }]}
           >
-           <Select
+            <Select
               onChange={(value) => setCondition(value)}
               defaultValue="none"
               options={[
@@ -510,7 +501,7 @@ const AgentScreen = () => {
           }
 
 
-          <Form.Item
+          {/* <Form.Item
             name="actionType"
             label="Action Type"
             rules={[{ required: true, message: 'Please select action type' }]}
@@ -523,9 +514,9 @@ const AgentScreen = () => {
                 { label: 'Camel Route', value: 'camelRoute' }
               ]}
             />
-          </Form.Item>
+          </Form.Item> */}
 
-          {actionType === 'email' && (
+          {/* {actionType === 'email' && (
             <Form.Item
               name="email"
               label="Email"
@@ -543,7 +534,15 @@ const AgentScreen = () => {
             >
               <Input />
             </Form.Item>
-          )}
+          )} */}
+
+          <Form.Item
+            name="apiUrl"
+            label="Api URL"
+          >
+            <Input />
+          </Form.Item>
+
 
           <Form.Item
             name="description"
@@ -551,6 +550,78 @@ const AgentScreen = () => {
           >
             <Input.TextArea rows={4} />
           </Form.Item>
+
+          <Form.Item
+            name="messageTemplate"
+            label="Message Template"
+          >
+            <Input.TextArea rows={4} />
+          </Form.Item>
+
+          <div style={{ marginBottom: 16 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <span>Tag Alias Mapping</span>
+              <Button 
+                type="primary" 
+                onClick={handleAddTagAliasRow}
+                icon={<PlusOutlined />}
+              >
+                Add Tag
+              </Button>
+            </div>
+            <Table 
+              dataSource={tagAliasRows}
+              pagination={false}
+              rowKey={(record, index) => index}
+              columns={[
+                {
+                  title: 'Name',
+                  dataIndex: 'name',
+                  key: 'name',
+                  width: '35%',
+                  render: (text, record, index) => (
+                    <Input
+                      value={text}
+                      onChange={(e) => handleTagAliasChange(index, 'name', e.target.value)}
+                      placeholder="Enter alias name"
+                      style={{ width: '100%' }}
+                    />
+                  )
+                },
+                {
+                  title: 'Node ID',
+                  dataIndex: 'nodeId',
+                  key: 'nodeId',
+                  width: '45%',
+                  render: (text, record, index) => (
+                    <Select
+                      value={text}
+                      onChange={(value) => handleTagAliasChange(index, 'nodeId', value)}
+                      style={{ width: '100%' }}
+                    >
+                      {subscribedTags.map(tag => (
+                        <Select.Option key={tag.value} value={tag.value}>
+                          {tag.value}
+                        </Select.Option>
+                      ))}
+                    </Select>
+                  )
+                },
+                {
+                  title: 'Action',
+                  key: 'action',
+                  render: (_, record, index) => (
+                    <Button
+                      type="text"
+                      icon={<DeleteOutlined style={{ color: '#ff4d4f' }} />}
+                      onClick={() => handleRemoveTagAliasRow(index)}
+                      disabled={tagAliasRows.length === 1}
+                    />
+                  )
+                }
+              ]}
+            />
+          </div>
         </Form>
       </Modal>
     </div>

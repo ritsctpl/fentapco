@@ -1,21 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { Button, Card, Tabs, Space, Popconfirm, Typography } from 'antd';
 import { ArrowLeftOutlined, DeleteOutlined } from '@ant-design/icons';
-import Host from './agentsTabs/Host';
-import Servers from './agentsTabs/Servers';
-import TagQuery from './agentsTabs/TagQuery';
-import NotificationProcessing from './agentsTabs/NotificationProcessing';
+// import Host from './agentsTabs/Host';
+// import Servers from './agentsTabs/Servers';
+// import TagQuery from './agentsTabs/TagQuery';
+// import NotificationProcessing from './agentsTabs/NotificationProcessing';
 import { FaLongArrowAltRight } from "react-icons/fa";
 import SourceDetail from '../../source/components/SourceDetail';
-import Log from './agentsTabs/Log';
-import SubscriptionItems from './agentsTabs/SubscriptionItems';
+// import Log from './agentsTabs/Log';
+// import SubscriptionItems from './agentsTabs/SubscriptionItems';
 import { deleteAgent } from '../../../services/agent';
 
 const { Text } = Typography;
 
 const AgentDetail = ({ agents, onBack }) => {
   const [selectedSource, setSelectedSource] = useState(null);
-
   const [agent, setAgent] = useState({
     // Common fields
     id: '',
@@ -143,41 +142,41 @@ const AgentDetail = ({ agents, onBack }) => {
     onBack();
   };
 
-  const MQTTItems = [
-    {
-      key: '0',
-      label: 'Host',
-      children: <Host agents={agent} handleChange={handleChange} />,
-    },
-    {
-      key: '1',
-      label: 'Log',
-      children: <Log agents={agent} handleChange={handleChange} />,
-    },
-    {
-      key: '2',
-      label: 'Servers',
-      children: <Servers agents={agent} handleChange={handleChange} />,
-    },
-    {
-      key: '3',
-      label: 'Tag Query',
-      children: <TagQuery agents={agent} handleChange={handleChange} />,
-    },
-    {
-      key: '4',
-      label: 'Subscription Items',
-      children: <SubscriptionItems 
-        agents={agent} 
-        handleChange={handleChange}
-      />,
-    },
-    {
-      key: '5',
-      label: 'Notification Processing',
-      children: <NotificationProcessing agents={agent} handleChange={handleChange} />,
-    },
-  ];
+  // const MQTTItems = [
+  //   {
+  //     key: '0',
+  //     label: 'Host',
+  //     children: <Host agents={agent} handleChange={handleChange} />,
+  //   },
+  //   {
+  //     key: '1',
+  //     label: 'Log',
+  //     children: <Log agents={agent} handleChange={handleChange} />,
+  //   },
+  //   {
+  //     key: '2',
+  //     label: 'Servers',
+  //     children: <Servers agents={agent} handleChange={handleChange} />,
+  //   },
+  //   {
+  //     key: '3',
+  //     label: 'Tag Query',
+  //     children: <TagQuery agents={agent} handleChange={handleChange} />,
+  //   },
+  //   {
+  //     key: '4',
+  //     label: 'Subscription Items',
+  //     children: <SubscriptionItems 
+  //       agents={agent} 
+  //       handleChange={handleChange}
+  //     />,
+  //   },
+  //   {
+  //     key: '5',
+  //     label: 'Notification Processing',
+  //     children: <NotificationProcessing agents={agent} handleChange={handleChange} />,
+  //   },
+  // ];
 
   const handleDeleteConfirm = async (agentId) => {
     const deleteAgents = await deleteAgent(agentId);
@@ -227,14 +226,14 @@ const AgentDetail = ({ agents, onBack }) => {
         </Space>
       </div>
 
-      <Card style={{ marginTop: '20px' }}>
+      {/* <Card style={{ marginTop: '20px' }}>
         <Tabs
           items={MQTTItems}
           defaultActiveKey="0"
           onChange={setActiveTab}
           className="agent-detail-tabs"
         />
-      </Card>
+      </Card> */}
     </div>
   );
 };

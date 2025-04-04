@@ -149,6 +149,13 @@ public class AgentController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/{id}/get-subscribed-tags")
+    public ResponseEntity<List<String>> getSubscribedTags(@PathVariable Long id)
+    {
+        List<String> subscribedTags = agentService.getSubscribedTags(id);
+        return ResponseEntity.ok(subscribedTags);
+    }
+
     @PostMapping("/{id}/subscribe-tags")
     public ResponseEntity<Boolean> subscribeTags(@PathVariable Long id, @RequestBody List<String> tagIds) {
         boolean isSubscribed = agentService.subscribeTags(id, tagIds);

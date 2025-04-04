@@ -3,11 +3,11 @@ import { Button, Card, Tabs, Space, Popconfirm, Typography } from 'antd';
 import { ArrowLeftOutlined, DeleteOutlined } from '@ant-design/icons';
 import { FaLongArrowAltRight } from "react-icons/fa";
 import SourceDetail from '../../source/components/SourceDetail';
-import Notification from './agentNotificationTabs/Notification';
 import AgentDetail from './AgentDetails';
-import MessageDelivery from './agentNotificationTabs/MessageDelivery';
-import Output from './agentNotificationTabs/output';
-import AgentDestination from './agentNotificationTabs/AgentDestination';
+// import Notification from './agentNotificationTabs/Notification';
+// import MessageDelivery from './agentNotificationTabs/MessageDelivery';
+// import Output from './agentNotificationTabs/output';
+// import AgentDestination from './agentNotificationTabs/AgentDestination';
 
 const { Text } = Typography;
 
@@ -180,28 +180,28 @@ const AgentNotification = ({ agentId, notificationId, onBack }) => {
     onBack();
   };
 
-  const NotificationItems = [
-    {
-      key: '0',
-      label: 'Notification',
-      children: <Notification agents={notification} handleChange={handleChange} />,
-    },
-    {
-      key: '1',
-      label: 'Output',
-      children: <Output agents={notification} handleChange={handleChange} />,
-    },
-    {
-      key: '2',
-      label: 'Message Delivery',
-      children: <MessageDelivery agents={notification} handleChange={handleChange} />,
-    },
-    {
-      key: '3',
-      label: 'Destination',
-      children: <AgentDestination agents={notification} handleChange={handleChange} />,
-    },
-  ];
+  // const NotificationItems = [
+  //   {
+  //     key: '0',
+  //     label: 'Notification',
+  //     children: <Notification agents={notification} handleChange={handleChange} />,
+  //   },
+  //   {
+  //     key: '1',
+  //     label: 'Output',
+  //     children: <Output agents={notification} handleChange={handleChange} />,
+  //   },
+  //   {
+  //     key: '2',
+  //     label: 'Message Delivery',
+  //     children: <MessageDelivery agents={notification} handleChange={handleChange} />,
+  //   },
+  //   {
+  //     key: '3',
+  //     label: 'Destination',
+  //     children: <AgentDestination agents={notification} handleChange={handleChange} />,
+  //   },
+  // ];
 
   const handleDeleteConfirm = (notificationId) => {
     const allAgents = JSON.parse(localStorage.getItem('agents') || '[]');
@@ -287,14 +287,14 @@ const AgentNotification = ({ agentId, notificationId, onBack }) => {
         </Space>
       </div>
 
-      <Card style={{ marginTop: '20px' }}>
+      {/* <Card style={{ marginTop: '20px' }}>
         <Tabs
           items={NotificationItems}
           defaultActiveKey="0"
           onChange={setActiveTab}
           className="agent-detail-tabs"
         />
-      </Card>
+      </Card> */}
     </div>
   );
 };

@@ -17,9 +17,6 @@ const SourceDetails = ({ sources, onBack }) => {
 
   const handleDeleteConfirm = async (sourceId) => {
     const deleteSources = await deleteSource(sourceId);
-    // const allSources = JSON.parse(localStorage.getItem('sources') || '[]');
-    // const updatedSources = allSources.filter(source => source.id.toString() !== sourceId.toString());
-    // localStorage.setItem('sources', JSON.stringify(updatedSources));
     onBack();
   };
 

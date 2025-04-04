@@ -7,8 +7,6 @@ import { createSource, testSourceConnection } from '../../../services/source';
 
 const SourceForm = ({ onBack, sources }) => {
 
-  console.log(sources, 'newa');
-
   const [sourceType, setSourceType] = useState('opcua');
   const [securityMode, setSecurityMode] = useState('');
   const [form] = Form.useForm();
