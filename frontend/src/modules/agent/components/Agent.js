@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Popconfirm, Table, Modal, Form, Input, Select, message, TreeSelect } from 'antd';
-import { CopyOutlined, DeleteOutlined, PlayCircleOutlined, PauseCircleOutlined, CarryOutOutlined, DownOutlined, PlusOutlined } from '@ant-design/icons';
+import { Button, Popconfirm, Table, Modal, Form, Input, Select, message } from 'antd';
+import { DeleteOutlined, PlayCircleOutlined, PauseCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import '../style.css';
 import AgentForm from './AgentForm';
 import AgentDetails from './AgentDetails';
 import AgentNotification from './AgentNotification';
 import { MdOutlineNotificationAdd } from 'react-icons/md';
-import { createAgent, deleteAgent, fetchAgents, getSubscribedTags, getSubscriptionTag, startAgent, stopAgent } from '../../../services/agent';
+import { createAgent, deleteAgent, fetchAgents, getSubscribedTags, startAgent, stopAgent } from '../../../services/agent';
 import { createNotification, deleteNotification } from '../../../services/notificationService';
-import { getAllNodes } from '../../../services/source';
 import { fetchDestinations } from '../../../services/destination';
 
 const AgentScreen = () => {
@@ -20,9 +19,8 @@ const AgentScreen = () => {
   const [currentAgent, setCurrentAgent] = useState(null);
   const [form] = Form.useForm();
   const [actionType, setActionType] = useState(null);
-  const [condition, setCondition] = useState('none');
-  // const [treeData, setTreeData] = useState([]);
-  const [nodeId, setNodeId] = useState(null);
+  // const [condition, setCondition] = useState('none');
+  const [nodeId, setNodeId] = useState(null)
   const [destinations, setDestinations] = useState([]);
   const [selectedDestination, setSelectedDestination] = useState(null);
   const [subscribedTags, setSubscribedTags] = useState([]);
@@ -59,18 +57,12 @@ const AgentScreen = () => {
     console.log(notification, 'notification');
     setIsNotificationModalVisible(true);
     
-    // Set the destination field with the destination name
     form.setFieldsValue({
       ...notification,
       destination: notification.destination.name
     });
-    
-    // Set the selected destination for the dropdown
     setSelectedDestination(notification.destination);
-    
     setSelectedNotification(notification);
-    
-    // If you have tag alias mapping, set it
     if (notification.tagAliasMap) {
       const tagAliasRows = Object.entries(notification.tagAliasMap).map(([name, nodeId]) => ({
         name,
@@ -91,25 +83,14 @@ const AgentScreen = () => {
     setCurrentAgent(null);
   };
 
-  const handleCopyConfirm = async (agentToCopy) => {
-    const { id, ...rest } = agentToCopy;
-    const agentToAdd = {
-      ...rest,
-      name: `${rest.name}_Copy`
-    };
-
-    const createCopyAgent = await createAgent(agentToAdd);
-  };
 
   const handleAddNotification = async (agent) => {
-    
     setCurrentAgent(agent);
     setIsNotificationModalVisible(true);
     
     try {
-      console.log('call');
       const fetchedSubscribedTags = await getSubscribedTags(agent.id);
-      // Transform the array of strings into the format needed for Select options
+      console.log(fetchedSubscribedTags, 'fetchedSubscribedTags');
       const formattedTags = fetchedSubscribedTags.map(tag => ({
         key: tag,
         value: tag,
@@ -145,7 +126,6 @@ const AgentScreen = () => {
       await form.validateFields();
       const values = form.getFieldsValue();
 
-      // Create tagAliasMap from rows
       const tagAliasMap = {};
       tagAliasRows.forEach(row => {
         if (row.name && row.nodeId) {
@@ -156,12 +136,9 @@ const AgentScreen = () => {
       const newNotification = {
         ...values,
         destination: selectedDestination,
-        condition: values.condition ? values.condition : 'none',
         agentId: currentAgent?.id,
         tagAliasMap
       };
-
-      console.log(newNotification, 'newNotification');
 
       const createNotifications = await createNotification(newNotification);
       
@@ -185,13 +162,6 @@ const AgentScreen = () => {
       form.resetFields();
       resetTagAliasTable();
       message.success('Notification Created');
-      
-      // const subscriptionTag = await getSubscriptionTag(nodeId, currentAgent.id, createNotifications?.id);
-      // if (subscriptionTag) {
-      //   message.success('Subscription Created');
-      // } else {
-      //   message.error('Failed to Subscribe');
-      // }
     } catch (error) {
       if (error.errorFields) {
         message.error('Please fill in all required fields');
@@ -205,6 +175,7 @@ const AgentScreen = () => {
     message.destroy();
     try {
       const startAgents = await startAgent(record.id);
+      setCall(call + 1);
       message.success(startAgents);
     } catch (error) {
       message.error('Failed to start agent');
@@ -215,6 +186,7 @@ const AgentScreen = () => {
     message.destroy();
     try {
       const stopAgents = await stopAgent(record.id);
+      setCall(call + 1);
       message.success(stopAgents);
     } catch (error) {
       message.error('Failed to stop agent');
@@ -241,6 +213,7 @@ const AgentScreen = () => {
 
   const handleDeleteNotification = async (notificationId) => {
     const deleteNotifications = await deleteNotification(notificationId);
+    message.success('Notification deleted');
     setCall(call + 1);
   }
 
@@ -271,6 +244,7 @@ const AgentScreen = () => {
                   handleNotificationClick(notification, record);
                 }
               })}
+              
               columns={[
                 {
                   title: 'Notification Name',
@@ -327,31 +301,27 @@ const AgentScreen = () => {
             title: 'Actions',
             key: 'actions',
             render: (_, record) => (
-              <div onClick={(e) => e.stopPropagation()}>
-                {/* <Popconfirm
-                  title="Create a copy of this agent?"
-                  onConfirm={() => handleCopyConfirm(record)}
-                  okText="Yes"
-                  cancelText="No"
-                >
+              <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'space-between' }}>
+              <div>
+                {
+                  record.agentStatus && 
                   <Button
-                    type="text"
-                    icon={<CopyOutlined style={{ color: '#3179ED', fontSize: '16px' }} />}
-                    title="Copy Agent"
-                  />
-                </Popconfirm> */}
-                <Button
+                  type="text"
+                  icon={<PauseCircleOutlined style={{ color: '#faad14', fontSize: '16px' }} />}
+                  onClick={() => handleStopAgent(record)}
+                  title="Stop Agent"
+                /> 
+                }
+                {
+                  !record.agentStatus &&
+                  <Button
                   type="text"
                   icon={<PlayCircleOutlined style={{ color: '#52c41a', fontSize: '16px' }} />}
                   onClick={() => handleStartAgent(record)}
                   title="Start Agent"
                 />
-                <Button
-                  type="text"
-                  icon={<PauseCircleOutlined style={{ color: '#faad14', fontSize: '16px' }} />}
-                  onClick={() => handleStopAgent(record)}
-                  title="Stop Agent"
-                />
+                }
+               
                 <Button
                   type="text"
                   icon={<MdOutlineNotificationAdd style={{ color: '#578E7E', fontSize: '20px' }} />}
@@ -370,6 +340,18 @@ const AgentScreen = () => {
                     title="Delete Agent"
                   />
                 </Popconfirm>
+                </div>
+                <div 
+                  style={{
+                    width: '8px',
+                    height: '8px',
+                    display: 'flex',
+                    justifyContent: 'end',
+                    borderRadius: '50%',
+                    backgroundColor: record.agentStatus ? '#52c41a' : '#ff4d4f',
+                    marginRight: '8px'
+                  }}
+                />
               </div>
             )
           }
@@ -378,13 +360,13 @@ const AgentScreen = () => {
       />
 
       <Modal
-        title={selectedNotification ? "View Notification" : "Add Notification"}
+        title={<div style={{ padding: '16px 0', fontSize: '20px', fontWeight: 'bold' }}>{selectedNotification ? "Notification" : "Add Notification"}</div>}
         open={isNotificationModalVisible}
         onCancel={() => {
           setIsNotificationModalVisible(false);
           form.resetFields();
           setActionType(null);
-          setCondition('none');
+          // setCondition('none');
           setSelectedNotification(null);
           resetTagAliasTable();
         }}
@@ -393,7 +375,7 @@ const AgentScreen = () => {
             setIsNotificationModalVisible(false);
             form.resetFields();
             setActionType(null);
-            setCondition('none');
+            // setCondition('none');
             setSelectedNotification(null);
           }}>
             Cancel
@@ -402,16 +384,18 @@ const AgentScreen = () => {
             OK
           </Button>
         ]}
-        width={700}
+        width={900}
         bodyStyle={{ 
-          height: '65vh',
+          height: '64vh',
           overflow: 'auto',
           paddingRight: '20px'
         }}
       >
         <Form
           form={form}
-          layout="vertical"
+          layout="horizontal"
+          labelCol={{ span: 6, style: { textAlign: 'start' } }}
+          wrapperCol={{ span: 18 }}
         >
           <Form.Item
             label="Destination"
@@ -434,6 +418,7 @@ const AgentScreen = () => {
           >
             <Input />
           </Form.Item>
+          
           <Form.Item
             name="nodeId"
             label="Node ID"
@@ -447,12 +432,12 @@ const AgentScreen = () => {
               ))}
             </Select>
           </Form.Item>
+          
           <Form.Item
             name="condition"
             label="Condition"
-          // rules={[{ required: true, message: 'Please enter condition' }]}
           >
-            <Select
+            {/* <Select
               onChange={(value) => setCondition(value)}
               defaultValue="none"
               options={[
@@ -462,10 +447,11 @@ const AgentScreen = () => {
                 { label: 'Between', value: 'between' },
                 { label: 'None', value: 'none' },
               ]}
-            />
+            /> */}
+            <Input />
           </Form.Item>
-          {
-            condition === 'between' && (
+
+          {/* { condition === 'between' && (
               <Form.Item
                 name="minimum"
                 label="Minimum"
@@ -500,8 +486,7 @@ const AgentScreen = () => {
             )
           }
 
-
-          {/* <Form.Item
+          <Form.Item
             name="actionType"
             label="Action Type"
             rules={[{ required: true, message: 'Please select action type' }]}
@@ -514,9 +499,9 @@ const AgentScreen = () => {
                 { label: 'Camel Route', value: 'camelRoute' }
               ]}
             />
-          </Form.Item> */}
+          </Form.Item>
 
-          {/* {actionType === 'email' && (
+          {actionType === 'email' && (
             <Form.Item
               name="email"
               label="Email"
@@ -539,28 +524,29 @@ const AgentScreen = () => {
           <Form.Item
             name="apiUrl"
             label="Api URL"
+            rules={[{ required: true, message: 'Please enter api URL' }]}
           >
             <Input />
-          </Form.Item>
-
-
-          <Form.Item
-            name="description"
-            label="Description"
-          >
-            <Input.TextArea rows={4} />
           </Form.Item>
 
           <Form.Item
             name="messageTemplate"
             label="Message Template"
+            rules={[{ required: true, message: 'Please enter message template' }]}
           >
-            <Input.TextArea rows={4} />
+            <Input.TextArea rows={1} />
+          </Form.Item>
+
+          <Form.Item
+            name="description"
+            label="Description"
+          >
+            <Input.TextArea rows={1} />
           </Form.Item>
 
           <div style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-              <span>Tag Alias Mapping</span>
+              <span>Tag Alias</span>
               <Button 
                 type="primary" 
                 onClick={handleAddTagAliasRow}

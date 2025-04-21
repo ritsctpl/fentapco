@@ -100,16 +100,20 @@ const DestinationForm = ({ destination, onBack }) => {
             </Col>
           </Row>
 
-          <Form.Item>
-            <Space style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
-              <Button type="primary" htmlType="submit" size="middle">
-                Create Destination
+          {
+            !destination && (
+              <Form.Item>
+                <Space style={{ display: 'flex', justifyContent: 'center', gap: '16px' }}>
+                  <Button type="primary" htmlType="submit" size="middle">
+                    Create Destination
               </Button>
               <Button size="middle" onClick={() => onBack()}>
                 Cancel
               </Button>
-            </Space>
-          </Form.Item>
+                </Space>
+              </Form.Item>
+            )
+          }
         </Form>
       </Card>
     </div>

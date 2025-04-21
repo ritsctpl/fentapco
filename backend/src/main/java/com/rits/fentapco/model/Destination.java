@@ -1,8 +1,12 @@
 package com.rits.fentapco.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import lombok.Data;
-import java.util.UUID;
 
 @Data
 @Entity
@@ -26,6 +30,7 @@ public class Destination {
     private String bearerToken;
 
     // 🔹 New Kafka-specific properties
+    @Column(name = "kafka_brokers")
     private String kafkaBrokers; // ✅ New Field for Kafka Brokers
     private String kafkaTopic; // Kafka topic to send messages
 

@@ -6,10 +6,11 @@ import { ArrowLeftOutlined, DeleteOutlined } from '@ant-design/icons';
 // import TagQuery from './agentsTabs/TagQuery';
 // import NotificationProcessing from './agentsTabs/NotificationProcessing';
 import { FaLongArrowAltRight } from "react-icons/fa";
-import SourceDetail from '../../source/components/SourceDetail';
+// import SourceDetail from '../../source/components/SourceDetail';
 // import Log from './agentsTabs/Log';
 // import SubscriptionItems from './agentsTabs/SubscriptionItems';
 import { deleteAgent } from '../../../services/agent';
+import SourceDetails from '../../source/components/SourceDetails';
 
 const { Text } = Typography;
 
@@ -193,7 +194,8 @@ const AgentDetail = ({ agents, onBack }) => {
   };
 
   if (selectedSource) {
-    return <SourceDetail sources={selectedSource} onBack={onBack} />;
+    // return <SourceDetail sources={selectedSource} onBack={onBack} />;
+    return <SourceDetails sources={selectedSource} onBack={onBack} />;
   }
 
   return (

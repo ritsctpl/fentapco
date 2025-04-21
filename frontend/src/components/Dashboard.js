@@ -4,17 +4,14 @@ import { GrResources } from "react-icons/gr";
 import { GiTargetShot } from "react-icons/gi";
 import { SiIobroker } from "react-icons/si";
 import {
-  ContainerOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
-  CalendarOutlined,
   UserOutlined,
   BellOutlined,
   SettingOutlined,
 } from '@ant-design/icons';
 import { Button, Menu, Avatar } from 'antd';
 import './style.css';
-import Settings from './Settings';
 import Sources from '../modules/source/components/Sources';
 import AgentScreen from '../modules/agent/components/Agent';
 import Destination from '../modules/destinations';
@@ -35,11 +32,6 @@ const items = [
     icon: <SiIobroker />,
     label: 'Agents',
   },
-  // {
-  //   key: '4',
-  //   icon: <ContainerOutlined />,
-  //   label: 'Subscription',
-  // }
 ];
 
 const Dashboard = () => {
@@ -85,9 +77,6 @@ const Dashboard = () => {
       case '3':
         navigate('/dashboard/agent');
         break;
-      // case '4':
-      //   navigate('/dashboard/subscription');
-      //   break;
       default:
         navigate('/dashboard/source');
     }
@@ -101,10 +90,6 @@ const Dashboard = () => {
         return <Destination />;
       case '3':
         return <AgentScreen />;
-      // case '4':
-      //   return <div>Subscription</div>;
-      // case '5':
-      //   return <Settings />;
       default:
         return <Sources />;
     }
@@ -155,7 +140,7 @@ const Dashboard = () => {
             style={{ height: '100%' }}
           />
         </div>
-        <div className="content-area" style={{marginLeft: collapsed ? '80px' : '256px'}}>
+        <div className="content-area" style={{marginLeft: collapsed ? '80px' : '256px', height: '100%'}}>
           {renderContent()}
         </div>
       </div>

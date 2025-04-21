@@ -39,10 +39,7 @@ export const getSubscriptionTag = async (nodeId, agentId) => {
 };
 
 export const getSubscribedTags = async (agentId) => {
-  console.log('call');
-  
   const response = await api.get(`/api/agents/${agentId}/get-subscribed-tags`);
-  console.log(response,'call');
   return response.data;
 };
 

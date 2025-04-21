@@ -78,9 +78,12 @@ public class DestinationServiceImpl implements DestinationService {
 
     @Override
     public List<DestinationDTO> getAllDestinations() {
+        // return destinationRepository.findAll().stream()
+        //         .map(this::mapToDTO)
+        //         .collect(Collectors.toList());
         return destinationRepository.findAll().stream()
-                .map(this::mapToDTO)
-                .collect(Collectors.toList());
+            .map(DestinationDTO::fromEntity)
+            .collect(Collectors.toList());
     }
 
     @Override

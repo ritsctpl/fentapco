@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Button, Card, Tabs, Space, Popconfirm, Typography } from 'antd';
 import { ArrowLeftOutlined, DeleteOutlined } from '@ant-design/icons';
 import { FaLongArrowAltRight } from "react-icons/fa";
-import SourceDetail from '../../source/components/SourceDetail';
+// import SourceDetail from '../../source/components/SourceDetail';
 import AgentDetail from './AgentDetails';
+import SourceDetails from '../../source/components/SourceDetails';
 // import Notification from './agentNotificationTabs/Notification';
 // import MessageDelivery from './agentNotificationTabs/MessageDelivery';
 // import Output from './agentNotificationTabs/output';
@@ -50,10 +51,6 @@ const AgentNotification = ({ agentId, notificationId, onBack }) => {
     notification: '',
     description: '',
   });
-  
-  useEffect(() => { 
-    console.log(notificationDatas,'notificationDatas');
-  }, [notificationDatas]);
   
   const [activeTab, setActiveTab] = useState(0);
   
@@ -235,7 +232,8 @@ const AgentNotification = ({ agentId, notificationId, onBack }) => {
   };
 
   if (selectedSource) {
-    return <SourceDetail sources={selectedSource} onBack={handleBack} />;
+    // return <SourceDetail sources={selectedSource} onBack={handleBack} />;
+    return <SourceDetails sources={selectedSource} onBack={handleBack} />;
   }
 
   const routeInstanceSystem = (instanceSystem) => {

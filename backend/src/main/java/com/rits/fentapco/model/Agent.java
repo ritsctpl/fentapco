@@ -85,6 +85,9 @@ public class Agent {
     private String websocketUrl; // WebSocket URL for publishing data
 
     @Column(nullable = true)
+    private boolean agentStatus;
+
+    @Column(nullable = true)
     private String sseUrl; // SSE URL for publishing data
 
     @Column(nullable = false)

@@ -31,9 +31,10 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Properties;
-import org.springframework.stereotype.Component;
+
 import org.springframework.boot.web.server.ConfigurableWebServerFactory;
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
+import org.springframework.stereotype.Component;
 
 @Component
 public class DynamicServerConfig implements WebServerFactoryCustomizer<ConfigurableWebServerFactory> {
@@ -45,6 +46,7 @@ public class DynamicServerConfig implements WebServerFactoryCustomizer<Configura
     public void customize(ConfigurableWebServerFactory factory) {
         try {
             String ipAddress = InetAddress.getLocalHost().getHostAddress(); // Get system's IP dynamically
+            //String ipAddress = "192.168.0.125";
             int port = 8787; // Set your port
 
             // Set the dynamic IP in the server factory

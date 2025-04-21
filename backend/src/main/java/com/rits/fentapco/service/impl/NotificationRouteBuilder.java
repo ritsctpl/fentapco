@@ -29,65 +29,130 @@ public class NotificationRouteBuilder extends RouteBuilder {
     @Autowired
     private PcoIdService pcoIdService;
 
+    // @Override
+    // public void configure() {
+    //     from("direct:notificationProcessor")
+    //             .routeId("notification-processor-route")
+    //             .process(exchange -> {
+    //                 Notification notification = exchange.getIn().getBody(Notification.class);
+    //                 Map<String, Object> inputData = notification.getInputData();
+
+    //                 if (evaluator.evaluateCondition(inputData, notification.getCondition())) {
+    //                     String correlationId = CorrelationIdGenerator.generateCorrelationId();
+
+    //                     // String pcoId = "RPCO001";
+    //                     String pcoId = pcoIdService.getPcoId(); // ✅ Consistent fetch
+    //                     if (notification.getDestination() != null && notification.getDestination().getPcoId() != null) {
+    //                         pcoId = notification.getDestination().getPcoId();
+    //                     } else {
+    //                         System.out.println("⚠️ Warning: PCO ID is null. Using default: " + pcoId);
+    //                     }
+
+    //                     String apiUrl = notification.getApiUrl() != null
+    //                             ? notification.getApiUrl()
+    //                             : "http://default-api.local/notify";
+    //                     if (notification.getApiUrl() == null) {
+    //                         System.out.println("⚠️ Warning: API URL is null. Using default: " + apiUrl);
+    //                     }
+    //                     String resolvedMessage = resolveTemplate(notification);
+
+    //                     Map<String, Object> kafkaMessage = new HashMap<>();
+    //                     kafkaMessage.put("correlationId", correlationId);
+    //                     kafkaMessage.put("pcoId", pcoId);
+    //                     kafkaMessage.put("agentId", notification.getId());
+    //                     kafkaMessage.put("apiUrl", apiUrl);
+    //                     // kafkaMessage.put("request", inputData);
+    //                     // kafkaMessage.put("request", resolvedMessage);
+    //                     // 👇 Correct request as a JSON object
+    //                     kafkaMessage.put("request", resolveTemplateAsMap(notification));
+
+    //                     String topic = pcoId + "-" + notification.getId();
+    //                     System.out.println("📦 Kafka Topic: " + topic);
+    //                     String kafkaBroker = notification.getDestination().getKafkaBrokers();
+    //                     String kafkaUri = String.format("kafka:%s?brokers=%s", topic, kafkaBroker);
+    //                     System.out.println("🔌 Kafka URI: " + kafkaUri);
+    //                     // System.out.println("🔌 Kafka message: " + kafkaMessage);
+
+    //                     String kafkaMessageJson = objectMapper.writeValueAsString(kafkaMessage);
+    //                     exchange.getContext().createProducerTemplate().sendBody(kafkaUri, kafkaMessageJson);
+    //                     System.out.println("🚀 Notification sent to Kafka (as JSON): " + kafkaMessageJson);
+    //                     // exchange.getContext().createProducerTemplate().sendBody(kafkaUri,
+    //                     // kafkaMessage);
+
+    //                     // exchange.getContext().createProducerTemplate().sendBody("kafka:" + topic,
+    //                     // kafkaMessage);
+
+    //                     // System.out.println("🚀 Notification sent to Kafka: " + kafkaMessage);
+    //                 } else {
+    //                     System.out.println("⏭ Condition not met, notification skipped.");
+    //                 }
+    //             });
+    // }
+
     @Override
-    public void configure() {
-        from("direct:notificationProcessor")
-                .routeId("notification-processor-route")
-                .process(exchange -> {
-                    Notification notification = exchange.getIn().getBody(Notification.class);
-                    Map<String, Object> inputData = notification.getInputData();
+public void configure() {
+    from("direct:notificationProcessor")
+            .routeId("notification-processor-route")
+            .process(exchange -> {
+                Notification notification = exchange.getIn().getBody(Notification.class);
+                Map<String, Object> inputData = notification.getInputData();
 
-                    if (evaluator.evaluateCondition(inputData, notification.getCondition())) {
-                        String correlationId = CorrelationIdGenerator.generateCorrelationId();
+                // Unified evaluation (could return Boolean, String, etc.)
+                Object result = evaluator.evaluate(inputData, notification.getCondition());
 
-                        // String pcoId = "RPCO001";
-                        String pcoId = pcoIdService.getPcoId(); // ✅ Consistent fetch
-                        if (notification.getDestination() != null && notification.getDestination().getPcoId() != null) {
-                            pcoId = notification.getDestination().getPcoId();
-                        } else {
-                            System.out.println("⚠️ Warning: PCO ID is null. Using default: " + pcoId);
-                        }
+                if (result instanceof Boolean && (Boolean) result) {
+                    System.out.println("✅ Boolean condition met: proceeding with notification...");
+                } else if (result instanceof String) {
+                    System.out.println("✅ String result: " + result);
+                } else {
+                    System.out.println("⏭ Condition not met or unsupported result type, skipping notification.");
+                    return;
+                }
 
-                        String apiUrl = notification.getApiUrl() != null
-                                ? notification.getApiUrl()
-                                : "http://default-api.local/notify";
-                        if (notification.getApiUrl() == null) {
-                            System.out.println("⚠️ Warning: API URL is null. Using default: " + apiUrl);
-                        }
-                        String resolvedMessage = resolveTemplate(notification);
+                String correlationId = CorrelationIdGenerator.generateCorrelationId();
 
-                        Map<String, Object> kafkaMessage = new HashMap<>();
-                        kafkaMessage.put("correlationId", correlationId);
-                        kafkaMessage.put("pcoId", pcoId);
-                        kafkaMessage.put("agentId", notification.getId());
-                        kafkaMessage.put("apiUrl", apiUrl);
-                        // kafkaMessage.put("request", inputData);
-                        // kafkaMessage.put("request", resolvedMessage);
-                        // 👇 Correct request as a JSON object
-                        kafkaMessage.put("request", resolveTemplateAsMap(notification));
+                String pcoId = pcoIdService.getPcoId(); // default
+                if (notification.getDestination() != null && notification.getDestination().getPcoId() != null) {
+                    pcoId = notification.getDestination().getPcoId();
+                } else {
+                    System.out.println("⚠️ Warning: PCO ID is null. Using default: " + pcoId);
+                }
 
-                        String topic = pcoId + "-" + notification.getId();
-                        System.out.println("📦 Kafka Topic: " + topic);
-                        String kafkaBroker = notification.getDestination().getKafkaBrokers();
-                        String kafkaUri = String.format("kafka:%s?brokers=%s", topic, kafkaBroker);
-                        System.out.println("🔌 Kafka URI: " + kafkaUri);
-                        // System.out.println("🔌 Kafka message: " + kafkaMessage);
+                String apiUrl = notification.getApiUrl() != null
+                        ? notification.getApiUrl()
+                        : "http://default-api.local/notify";
+                if (notification.getApiUrl() == null) {
+                    System.out.println("⚠️ Warning: API URL is null. Using default: " + apiUrl);
+                }
 
-                        String kafkaMessageJson = objectMapper.writeValueAsString(kafkaMessage);
-                        exchange.getContext().createProducerTemplate().sendBody(kafkaUri, kafkaMessageJson);
-                        System.out.println("🚀 Notification sent to Kafka (as JSON): " + kafkaMessageJson);
-                        // exchange.getContext().createProducerTemplate().sendBody(kafkaUri,
-                        // kafkaMessage);
+                String message = "";
+                //👉 Add evaluated result as a message (if String)
+                if (result instanceof String) {
+                    message = String.valueOf(result);
+                }
 
-                        // exchange.getContext().createProducerTemplate().sendBody("kafka:" + topic,
-                        // kafkaMessage);
+                Map<String, Object> kafkaMessage = new HashMap<>();
+                kafkaMessage.put("correlationId", correlationId);
+                kafkaMessage.put("pcoId", pcoId);
+                kafkaMessage.put("agentId", notification.getId());
+                kafkaMessage.put("apiUrl", apiUrl);
+                kafkaMessage.put("request", resolveTemplateAsMap(notification,message));
 
-                        // System.out.println("🚀 Notification sent to Kafka: " + kafkaMessage);
-                    } else {
-                        System.out.println("⏭ Condition not met, notification skipped.");
-                    }
-                });
-    }
+              
+
+                String topic = pcoId + "-" + notification.getId();
+                System.out.println("📦 Kafka Topic: " + topic);
+
+                String kafkaBroker = notification.getDestination().getKafkaBrokers();
+                String kafkaUri = String.format("kafka:%s?brokers=%s", topic, kafkaBroker);
+                System.out.println("🔌 Kafka URI: " + kafkaUri);
+
+                String kafkaMessageJson = objectMapper.writeValueAsString(kafkaMessage);
+                exchange.getContext().createProducerTemplate().sendBody(kafkaUri, kafkaMessageJson);
+                System.out.println("🚀 Notification sent to Kafka (as JSON): " + kafkaMessageJson);
+            });
+}
+
 
     public void ensureNotificationProcessorRoute(CamelContext context) throws Exception {
         String routeId = "notification-processor-route";
@@ -121,101 +186,208 @@ public class NotificationRouteBuilder extends RouteBuilder {
         return template;
     }
 
-    private Map<String, Object> resolveTemplateAsMap(Notification notification) {
+    // private Map<String, Object> resolveTemplateAsMap(Notification notification,String stringValue) {
+    //     String template = notification.getMessageTemplate();
+    //     if (template == null || template.isEmpty())
+    //         return Map.of();
+
+    //     Map<String, String> aliasMap = notification.getTagAliasMap();
+    //     Long agentId = notification.getAgentId();
+
+    //     for (Map.Entry<String, String> entry : aliasMap.entrySet()) {
+    //         String alias = entry.getKey();
+    //         String nodeId = entry.getValue();
+    //         Object value = tagValueCacheService.getTagValue(agentId, nodeId);
+    //         template = template.replace("{{" + alias + "}}", value != null ? value.toString() : "null");
+    //     }
+
+    //     try {
+    //         // 🔄 Convert the resolved string back into a Map
+    //         return objectMapper.readValue(template, Map.class);
+    //     } catch (Exception e) {
+    //         e.printStackTrace();
+    //         return Map.of("error", "Failed to parse template");
+    //     }
+    // }
+
+
+    private Map<String, Object> resolveTemplateAsMap(Notification notification,String stringValue) {
         String template = notification.getMessageTemplate();
         if (template == null || template.isEmpty())
             return Map.of();
-
+    
         Map<String, String> aliasMap = notification.getTagAliasMap();
         Long agentId = notification.getAgentId();
-
+    
         for (Map.Entry<String, String> entry : aliasMap.entrySet()) {
             String alias = entry.getKey();
             String nodeId = entry.getValue();
             Object value = tagValueCacheService.getTagValue(agentId, nodeId);
             template = template.replace("{{" + alias + "}}", value != null ? value.toString() : "null");
         }
-
+    
+        Map<String, Object> finalMap;
         try {
-            // 🔄 Convert the resolved string back into a Map
-            return objectMapper.readValue(template, Map.class);
+            finalMap = objectMapper.readValue(template, Map.class);
         } catch (Exception e) {
             e.printStackTrace();
             return Map.of("error", "Failed to parse template");
         }
-    }
-
-    public void addRouteForNotification(Notification notification, CamelContext context) throws Exception {
-        String routeId = "notification-" + notification.getId();
-
-        if (context.getRoute(routeId) == null) {
-            context.addRoutes(new RouteBuilder() {
-                @Override
-                public void configure() {
-                    from("direct:" + routeId)
-                            .routeId(routeId)
-                            .process(exchange -> {
-                                Map<String, Object> body = exchange.getIn().getBody(Map.class);
-
-                                if (evaluator.evaluateCondition(body, notification.getCondition())) {
-                                    String correlationId = CorrelationIdGenerator.generateCorrelationId();
-
-                                    // String pcoId = "RPCO001";
-                                    String pcoId = pcoIdService.getPcoId(); // ✅ Consistent fetch
-                                    if (notification.getDestination() != null
-                                            && notification.getDestination().getPcoId() != null) {
-                                        pcoId = notification.getDestination().getPcoId();
-                                    } else {
-                                        System.out.println("⚠️ Warning: PCO ID is null. Using default: " + pcoId);
-                                    }
-
-                                    String apiUrl = notification.getApiUrl() != null
-                                            ? notification.getApiUrl()
-                                            : "http://default-api.local/notify";
-                                    if (notification.getApiUrl() == null) {
-                                        System.out.println("⚠️ Warning: API URL is null. Using default: " + apiUrl);
-                                    }
-                                    String resolvedMessage = resolveTemplate(notification);
-                                    Map<String, Object> kafkaMessage = new HashMap<>();
-                                    kafkaMessage.put("correlationId", correlationId);
-                                    kafkaMessage.put("pcoId", pcoId);
-                                    kafkaMessage.put("agentId", String.valueOf(notification.getId()));
-                                    kafkaMessage.put("apiUrl", apiUrl);
-                                    // kafkaMessage.put("request", body);
-                                    // kafkaMessage.put("request", resolvedMessage);
-                                    // 👇 Correct request as a JSON object
-                                    kafkaMessage.put("request", resolveTemplateAsMap(notification));
-
-                                    String topic = pcoId + "-" + notification.getId();
-                                    System.out.println("📦 Kafka Topic: " + topic);
-                                    String kafkaBroker = notification.getDestination().getKafkaBrokers(); // assuming
-                                                                                                          // this is the
-                                                                                                          // new field
-                                    String kafkaUri = String.format("kafka:%s?brokers=%s", topic, kafkaBroker);
-                                    System.out.println("🔌 Kafka URI: " + kafkaUri);
-                                    System.out.println("🔌 Kafka message: " + kafkaMessage);
-
-                                    String kafkaMessageJson = objectMapper.writeValueAsString(kafkaMessage);
-                                    exchange.getContext().createProducerTemplate().sendBody(kafkaUri, kafkaMessageJson);
-                                    System.out.println("🚀 Notification sent to Kafka (as JSON): " + kafkaMessageJson);
-                                    // exchange.getContext().createProducerTemplate().sendBody(kafkaUri,
-                                    // kafkaMessage);
-
-                                    // exchange.getContext().createProducerTemplate().sendBody("kafka:" + topic,
-                                    // kafkaMessage);
-
-                                    // System.out.println(
-                                    // "📤 Notification (" + notification.getId() + ") sent: " + kafkaMessage);
-                                } else {
-                                    System.out.println("⏭ Condition not met for notification " + notification.getId());
-                                }
-                            });
-                }
-            });
-
-            context.getRouteController().startRoute(routeId);
+    
+        // 👇 Add Status if the condition is a ternary expression
+        String condition = notification.getCondition();
+        if (condition != null && condition.contains("?") && condition.contains(":")) {
+                finalMap.put("logEvent", stringValue);
         }
+    
+        return finalMap;
     }
+    
+
+//     public void addRouteForNotification(Notification notification, CamelContext context) throws Exception {
+//         String routeId = "notification-" + notification.getId();
+
+//         if (context.getRoute(routeId) == null) {
+//             context.addRoutes(new RouteBuilder() {
+//                 @Override
+//                 public void configure() {
+//                     from("direct:" + routeId)
+//                             .routeId(routeId)
+//                             .process(exchange -> {
+//                                 Map<String, Object> body = exchange.getIn().getBody(Map.class);
+
+//                                 if (evaluator.evaluateCondition(body, notification.getCondition())) {
+//                                     String correlationId = CorrelationIdGenerator.generateCorrelationId();
+
+//                                     // String pcoId = "RPCO001";
+//                                     String pcoId = pcoIdService.getPcoId(); // ✅ Consistent fetch
+//                                     if (notification.getDestination() != null
+//                                             && notification.getDestination().getPcoId() != null) {
+//                                         pcoId = notification.getDestination().getPcoId();
+//                                     } else {
+//                                         System.out.println("⚠️ Warning: PCO ID is null. Using default: " + pcoId);
+//                                     }
+
+//                                     String apiUrl = notification.getApiUrl() != null
+//                                             ? notification.getApiUrl()
+//                                             : "http://default-api.local/notify";
+//                                     if (notification.getApiUrl() == null) {
+//                                         System.out.println("⚠️ Warning: API URL is null. Using default: " + apiUrl);
+//                                     }
+//                                     String resolvedMessage = resolveTemplate(notification);
+//                                     Map<String, Object> kafkaMessage = new HashMap<>();
+//                                     kafkaMessage.put("correlationId", correlationId);
+//                                     kafkaMessage.put("pcoId", pcoId);
+//                                     kafkaMessage.put("agentId", String.valueOf(notification.getId()));
+//                                     kafkaMessage.put("apiUrl", apiUrl);
+//                                     // kafkaMessage.put("request", body);
+//                                     // kafkaMessage.put("request", resolvedMessage);
+//                                     // 👇 Correct request as a JSON object
+//                                     kafkaMessage.put("request", resolveTemplateAsMap(notification));
+
+//                                     String topic = pcoId + "-" + notification.getId();
+//                                     System.out.println("📦 Kafka Topic: " + topic);
+//                                     String kafkaBroker = notification.getDestination().getKafkaBrokers(); // assuming
+//                                                                                                           // this is the
+//                                                                                                           // new field
+//                                     String kafkaUri = String.format("kafka:%s?brokers=%s", topic, kafkaBroker);
+//                                     System.out.println("🔌 Kafka URI: " + kafkaUri);
+//                                     System.out.println("🔌 Kafka message: " + kafkaMessage);
+
+//                                     String kafkaMessageJson = objectMapper.writeValueAsString(kafkaMessage);
+//                                     exchange.getContext().createProducerTemplate().sendBody(kafkaUri, kafkaMessageJson);
+//                                     System.out.println("🚀 Notification sent to Kafka (as JSON): " + kafkaMessageJson);
+//                                     // exchange.getContext().createProducerTemplate().sendBody(kafkaUri,
+//                                     // kafkaMessage);
+
+//                                     // exchange.getContext().createProducerTemplate().sendBody("kafka:" + topic,
+//                                     // kafkaMessage);
+
+//                                     // System.out.println(
+//                                     // "📤 Notification (" + notification.getId() + ") sent: " + kafkaMessage);
+//                                 } else {
+//                                     System.out.println("⏭ Condition not met for notification " + notification.getId());
+//                                 }
+//                             });
+//                 }
+//             });
+
+//             context.getRouteController().startRoute(routeId);
+//         }
+//     }
+// }
+
+public void addRouteForNotification(Notification notification, CamelContext context) throws Exception {
+    String routeId = "notification-" + notification.getId();
+
+    if (context.getRoute(routeId) == null) {
+        context.addRoutes(new RouteBuilder() {
+            @Override
+            public void configure() {
+                from("direct:" + routeId)
+                        .routeId(routeId)
+                        .process(exchange -> {
+                            Map<String, Object> body = exchange.getIn().getBody(Map.class);
+
+                            Object result = evaluator.evaluate(body, notification.getCondition());
+                            if (result instanceof Boolean && (Boolean) result) {
+                                System.out.println("✅ Boolean condition met: proceeding with notification...");
+                            } else if (result instanceof String) {
+                                System.out.println("✅ String result: " + result);
+                            } else {
+                                System.out.println("⏭ Condition not met or unsupported result type for notification "
+                                        + notification.getId());
+                                return;
+                            }
+
+                            String correlationId = CorrelationIdGenerator.generateCorrelationId();
+
+                            String pcoId = pcoIdService.getPcoId();
+                            if (notification.getDestination() != null
+                                    && notification.getDestination().getPcoId() != null) {
+                                pcoId = notification.getDestination().getPcoId();
+                            } else {
+                                System.out.println("⚠️ Warning: PCO ID is null. Using default: " + pcoId);
+                            }
+
+                            String apiUrl = notification.getApiUrl() != null
+                                    ? notification.getApiUrl()
+                                    : "http://default-api.local/notify";
+                            if (notification.getApiUrl() == null) {
+                                System.out.println("⚠️ Warning: API URL is null. Using default: " + apiUrl);
+                            }
+
+                            String message = "";
+                            //👉 Add evaluated result as a message (if String)
+                            if (result instanceof String) {
+                                message = String.valueOf(result);
+                            }
+
+                            String resolvedMessage = resolveTemplate(notification);
+                            Map<String, Object> kafkaMessage = new HashMap<>();
+                            kafkaMessage.put("correlationId", correlationId);
+                            kafkaMessage.put("pcoId", pcoId);
+                            kafkaMessage.put("agentId", String.valueOf(notification.getId()));
+                            kafkaMessage.put("apiUrl", apiUrl);
+                            kafkaMessage.put("request", resolveTemplateAsMap(notification,message));
+
+
+                            String topic = pcoId + "-" + notification.getId();
+                            System.out.println("📦 Kafka Topic: " + topic);
+                            String kafkaBroker = notification.getDestination().getKafkaBrokers();
+                            String kafkaUri = String.format("kafka:%s?brokers=%s", topic, kafkaBroker);
+                            System.out.println("🔌 Kafka URI: " + kafkaUri);
+
+                            String kafkaMessageJson = objectMapper.writeValueAsString(kafkaMessage);
+                            exchange.getContext().createProducerTemplate().sendBody(kafkaUri, kafkaMessageJson);
+                            System.out.println("🚀 Notification sent to Kafka (as JSON): " + kafkaMessageJson);
+                        });
+            }
+        });
+
+        context.getRouteController().startRoute(routeId);
+    }
+}
 }
 
 // package com.rits.fentapco.service.impl;

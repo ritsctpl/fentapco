@@ -20,7 +20,3 @@ export const deleteDestination = async (id) => {
   return response.data;
 };
 
-export const testDestinationConnection = async (id) => {
-  const response = await api.post(`/api/destinations/${id}/test`);
-  return response.data;
-};

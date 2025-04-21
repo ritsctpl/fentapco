@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Button, Card, Popconfirm } from 'antd';
+import { Button, Table, Popconfirm, Space } from 'antd';
+import { CopyOutlined, DeleteOutlined } from '@ant-design/icons';
 import SourceForm from './SourceForm';
-import { CopyOutlined } from '@ant-design/icons';
 import '../style.css';
-import { createSource, fetchSourceById, fetchSources } from '../../../services/source';
+import { createSource, fetchSourceById, fetchSources, deleteSource } from '../../../services/source';
 import SourceDetails from './SourceDetails';
 
 const Sources = () => {
@@ -13,17 +13,8 @@ const Sources = () => {
   const [call, setCall] = useState(0);
 
   useEffect(() => {
-    // const storedSources = localStorage.getItem('sources');
-    // const fetchDataSources = async () => {
-    //   const sources = await fetchSources();
-    //   setPcoSources(sources);
-    // };
-    // fetchDataSources();
-    // if (storedSources) {
-    //   setSources(JSON.parse(storedSources));
-    // }
-
     const fetchDataSources = async () => {
+      console.log('fetch');
       const sources = await fetchSources();
       setPcoSources(sources);
       setSources(sources);
@@ -54,53 +45,90 @@ const Sources = () => {
 
   const handleCopyConfirm = async (sourceToCopy) => {
     const { id, ...sourceData } = sourceToCopy;
-
     const sourceToAdd = {
       ...sourceData,
       name: `${sourceToCopy.name}_Copy`
     };
-
     const newSource = await createSource(sourceToAdd);
-    
-    // const updatedSources = [...sources, newSource];
-    // localStorage.setItem('sources', JSON.stringify(updatedSources));
-    // setSources(updatedSources);
+    setCall(call + 1);
   };
+
+  const handleDeleteConfirm = async (sourceId) => {
+    await deleteSource(sourceId);
+    setCall(call + 1);
+  };
+
+  const columns = [
+    {
+      title: 'Name',
+      dataIndex: 'name',
+      key: 'name',
+      // render: (text, record) => (
+      //   <a onClick={() => handleSourceClick(record)}>{text}</a>
+      // ),
+    },
+    {
+      title: 'Type',
+      dataIndex: 'type',
+      key: 'type',
+    },
+    {
+      title: 'Endpoint URL',
+      dataIndex: 'endpointUrl',
+      key: 'endpointUrl',
+      render: (text) => text.length > 30 ? text.substring(0, 30) + '...' : text,
+    },
+    {
+      title: 'Actions',
+      key: 'actions',
+      render: (_, record) => (
+        <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <Space size="middle">
+          <Popconfirm
+            title="Create a copy of this source?"
+            onConfirm={() => handleCopyConfirm(record)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button 
+              type="text" 
+              icon={<CopyOutlined style={{ color: '#3179ED' }}/>}
+            />
+          </Popconfirm>
+          <Popconfirm
+            title="Are you sure you want to delete this source?"
+            onConfirm={() => handleDeleteConfirm(record.id)}
+            okText="Yes"
+            cancelText="No"
+          >
+            <Button 
+              type="text" 
+              danger
+              icon={<DeleteOutlined />}
+            />
+          </Popconfirm>
+        </Space>
+        </div>
+      ),
+    },
+  ];
 
   return (
     <div className="sources-container">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <h2>Sources</h2>
-        <Button type="primary" onClick={() => handleAddSource(sources)}>Add Source</Button>
+        <Button type="primary" onClick={handleAddSource}>Add Source</Button>
       </div>
-      <div className="cards-grid" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px' }}>
-        {sources?.map(source => (
-          <Card
-            key={source.id}
-            style={{ textAlign: 'center', cursor: 'pointer', width: '200px', position: 'relative', display: 'flex', justifyContent: 'center', alignItems: 'center', boxShadow: '0 0 10px 0 rgba(0, 0, 0, 0.1)' }}
-            onClick={() => handleSourceClick(source)}
-            className="source-card"
-          >
-            <div onClick={(e) => e.stopPropagation()}>
-              <Popconfirm
-                title="Create a copy of this source?"
-                onConfirm={() => handleCopyConfirm(source)}
-                okText="Yes"
-                cancelText="No"
-              >
-                <Button 
-                  type="text" 
-                  className="copy-button"
-                  icon={<CopyOutlined style={{ color: '#3179ED' }}/>} 
-                />
-              </Popconfirm>
-            </div>
-            <h3>{source.name}</h3>
-            <p style={{fontSize:'12px'}}>{source.type}</p>
-            <p style={{fontSize:'12px'}}>{source.endpointUrl.length > 30 ? source.endpointUrl.substring(0, 30) + '...' : source.endpointUrl}</p>
-          </Card>
-        ))}
-      </div>
+      <Table 
+        dataSource={sources} 
+        columns={columns} 
+        rowKey="id"
+        pagination={false}
+        onRow={(record) => ({
+          onClick: () => handleSourceClick(record),
+          style: { cursor: 'pointer' }
+        })}
+      />
     </div>
   );
 };

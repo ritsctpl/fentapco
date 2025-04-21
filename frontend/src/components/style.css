@@ -57,14 +57,13 @@
 
 .content-area {
   flex: 1;
-  /* margin-left: 256px; */
   padding: 24px;
   transition: margin-left 0.2s;
 }
 
-.dashboard-container .sidebar.collapsed + .content-area {
+/* .dashboard-container .sidebar.collapsed + .content-area {
   margin-left: 80px;
-}
+} */
 
 .collapse-button {
   font-size: 16px;

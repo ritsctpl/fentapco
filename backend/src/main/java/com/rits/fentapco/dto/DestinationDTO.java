@@ -2,6 +2,7 @@ package com.rits.fentapco.dto;
 
 import com.rits.fentapco.model.Destination;
 
+import jakarta.persistence.Column;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,6 +25,7 @@ public class DestinationDTO {
     private boolean active;
 
     // 🔹 New Kafka properties
+    @Column(name = "kafka_brokers")
     private String kafkaBrokers; // ✅ New Field for Kafka Brokers
     private String kafkaTopic;
 

@@ -293,14 +293,16 @@ public class AgentServiceImpl implements AgentService {
                     // tag.setOpcUaConnection(opcUaConnection);
                     // // tag.setAgent(agent);
                     // tags.add(tag);
+                    
                     boolean exists = tags.stream()
                     .anyMatch(tag -> tag.getNodeId().equals(nodeId));
-               
+                
                 if (!exists) {
                     OpcUaTag tag = new OpcUaTag();
                     tag.setNodeId(nodeId);
                     tag.setTagName(nodeId);
                     tag.setOpcUaConnection(opcUaConnection);
+                    // tag.setAgent(agent);
                     tags.add(tag);
                 }
                 }

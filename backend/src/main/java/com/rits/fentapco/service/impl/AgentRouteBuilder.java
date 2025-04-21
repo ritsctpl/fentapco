@@ -327,16 +327,17 @@ public class AgentRouteBuilder {
             // }
 
             // alreadySubscribedNodes.add(nodeId);
-
+            // if(!alreadySubscribedNodes.contains(nodeId)){
             System.out.println("🔔 Notification tag found for Node ID: " + nodeId);
-
             String opcUaUri = String.format(
                     "milo-client:%s?clientId=camel-client-%s-notif&method=subscribe&node=%s",
                     agent.getOpcUaConnection().getEndpointUrl(),
                     agentName,
                     URLEncoder.encode(nodeId, StandardCharsets.UTF_8.name()));
 
-            String nodeRouteId = "node-route-notification-" + agentName + "-" + nodeId.hashCode();
+
+            String nodeRouteId = "node-route-notification-" + agentName + "-" + notification.getId().toString().hashCode();
+            System.out.println("NodeRoute : "+nodeRouteId);
             stopAndRemoveRoute(nodeRouteId);
 
             camelContext.addRoutes(new RouteBuilder() {
@@ -381,15 +382,18 @@ public class AgentRouteBuilder {
 
                     System.out.println("✅ Notification route created for OPC UA Node: " + nodeId);
                 }
+            
             });
 
             camelContext.getRouteController().startRoute(nodeRouteId);
         }
+    // }
+        agent.setAgentStatus(true);
+        agentRepository.save(agent);
 
         // 4. WebSocket handler setup
         setupWebSocketIfEnabled(agent);
     }
-
     // public void stopRoute(Agent agent) throws Exception {
     // String agentName = agent.getName();
     // String aggregateRouteId = "aggregate-route-" + agentName;
@@ -493,6 +497,8 @@ public class AgentRouteBuilder {
             webSocketHandlers.remove(agentName);
             System.out.println("✅ WebSocket handler removed for agent: " + agentName);
         }
+        agent.setAgentStatus(false);
+        agentRepository.save(agent);
     }
 
     private List<String> buildOpcUaUris(Agent agent) {
@@ -722,17 +728,85 @@ public class AgentRouteBuilder {
 
         if (dataValue.getStatusCode().isGood()) {
             try {
+            //// My code to andle message remove when needed
+            String station = "", resourceName = "";
+            String insideBrackets = nodeId.substring(nodeId.indexOf('[') + 1, nodeId.indexOf(']'));
+            String tagPath = nodeId.substring(nodeId.indexOf(']') + 1);
+            String[] parts = new String[4]; 
+                if(tagPath.contains("/")){
+                  parts = tagPath.split("/");
+                }else if (tagPath.contains("."))
+                {
+                  parts = tagPath.split("\\.");
+                }else{
+                    System.out.println("Error Spliting Node");
+                }
+
+                if (parts.length == 2) {
+                    station = insideBrackets;
+                    resourceName = parts[1];
+                } else {
+                    System.out.println("Invalid input format");
+                }
+
+               // Create or get existing array node
+                    ArrayNode arrayNode;
+                    if (agent.getLastMessage() == null) {
+                        arrayNode = mapper.createArrayNode();
+                    } else {
+                        arrayNode = (ArrayNode) mapper.readTree(agent.getLastMessage());
+                    }
+
+                    // Find or create station object
+                    ObjectNode stationNode = null;
+                    for (JsonNode node : arrayNode) {
+                        if (node.get("id").asText().equals(station)) {
+                            stationNode = (ObjectNode) node;
+                            break;
+                        }
+                    }
+
+                    if (stationNode == null) {
+                        stationNode = mapper.createObjectNode();
+                        stationNode.put("id", station);
+                        stationNode.put("resource", station);
+                        stationNode.set("tags", mapper.createArrayNode());
+                        arrayNode.add(stationNode);
+                    }
+
+                    // Add or update resource
+                    ArrayNode resources = (ArrayNode) stationNode.get("tags");
+                    boolean resourceFound = false;
+                    for (JsonNode resource : resources) {
+                        if (resource.get("name").asText().equals(resourceName)) {
+                            ((ObjectNode) resource).put("value", value.getValue().toString());
+                            resourceFound = true;
+                            break;
+                        }
+                    }
+
+                    if (!resourceFound) {
+                        ObjectNode resourceNode = mapper.createObjectNode();
+                        resourceNode.put("name", resourceName);
+                        resourceNode.put("value", value.getValue().toString());
+                        resources.add(resourceNode);
+                    }
+
+                    // Store the updated message and send it
+                    String jsonMessage = mapper.writeValueAsString(arrayNode);
+                    agent.setLastMessage(jsonMessage);
+              // // My code ends here 
                 // Extract tag name after "s=" if present
                 String tagName = nodeId.contains("s=") ? nodeId.split("s=", 2)[1] : nodeId;
 
-                // Build JSON message directly with tag name and value
-                ObjectNode jsonNode = mapper.createObjectNode();
-                jsonNode.put("tag", tagName);
-                jsonNode.put("value", value.getValue().toString());
+                // //Build JSON message directly with tag name and value
+                // ObjectNode jsonNode = mapper.createObjectNode();
+                // jsonNode.put("tag", tagName);
+                // jsonNode.put("value", value.getValue().toString());
 
-                String jsonMessage = mapper.writeValueAsString(jsonNode);
+                // String jsonMessage = mapper.writeValueAsString(jsonNode);
 
-                // Send to WebSocket
+               // // Send to WebSocket
                 sendToWebSocket(agent, jsonMessage);
 
                 // System.out.println("📤 WebSocket message sent → tag: " + tagName + ", value:
